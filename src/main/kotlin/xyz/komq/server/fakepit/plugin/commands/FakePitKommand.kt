@@ -59,11 +59,13 @@ object FakePitKommand {
                         setupTeams()
 
                         for (name in playerNameList) {
-                            val teamPlayer = requireNotNull(server.getPlayer(name[teamCount].toString()))
+                            val teamPlayer = server.getPlayer(name[teamCount].toString())
 
                             addTeam(playerNameList[teamCount], teamCount)
                             setupArmors(teamCount, teamPlayer)
-                            playerTeamCount[teamPlayer.uniqueId] = teamCount
+                            if (teamPlayer != null) {
+                                playerTeamCount[teamPlayer.uniqueId] = teamCount
+                            }
 
                             if (teamCount != playerNameList.size) {
                                 ++teamCount
