@@ -107,6 +107,7 @@ class FakePitEvent : Listener {
                 netherStarOwner = killer
                 killer.inventory.setItem(EquipmentSlot.OFF_HAND, ItemStack(Material.NETHER_STAR))
                 killer.isGlowing = true
+                server.broadcast(text("${killer.name}님이 첫 네더의 별을 소유하고 있습니다!"))
                 // TODO : LORE
             }
             else if (hasNetherStar[p.uniqueId] == true) {
@@ -114,7 +115,9 @@ class FakePitEvent : Listener {
                 killer.isGlowing = true
                 hasNetherStar[p.uniqueId] = false
                 hasNetherStar[killer.uniqueId] = true
+                netherStarOwner = killer
                 killer.inventory.setItem(EquipmentSlot.OFF_HAND, ItemStack(Material.NETHER_STAR))
+                server.broadcast(text("${killer.name}님이 네더의 별을 소유하고 있습니다!"))
             }
         }
         deathLocation[p.uniqueId] = p.location
@@ -134,7 +137,7 @@ class FakePitEvent : Listener {
                 p.inventory.setItemInOffHand(ItemStack(Material.NETHER_STAR))
                 e.isCancelled = true
 
-                server.sendMessage(text("${p.name}님이 네더의 별을 주우셨습니다!"))
+                server.broadcast(text("${p.name}님이 네더의 별을 주우셨습니다!"))
             }
         }
     }
@@ -148,7 +151,6 @@ class FakePitEvent : Listener {
         sword.itemMeta = swordMeta
         p.inventory.clear()
         p.inventory.setItemInMainHand(sword)
-        p.inventory.addItem(ItemStack(Material.BREAD, 16))
         setupArmors(requireNotNull(playerTeamCount[p.uniqueId]), p)
         wasDead[p.uniqueId] = true
         server.scheduler.runTaskLater(getInstance(), Runnable {

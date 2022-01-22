@@ -10,7 +10,6 @@ import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Color
-import org.bukkit.GameRule
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -25,7 +24,6 @@ import xyz.komq.server.fakepit.plugin.FakePitPluginMain
 import xyz.komq.server.fakepit.plugin.commands.FakePitKommand.playerNameList
 import xyz.komq.server.fakepit.plugin.tasks.FakePitConfigReloadTask
 import java.util.*
-import kotlin.collections.HashMap
 
 /***
  * @author BaeHyeonWoo
@@ -336,10 +334,6 @@ object FakePitGameContentManager {
             sc.resetScores(it.name)
             hasNetherStar[it.uniqueId] = false
             it.isGlowing = false
-        }
-        server.worlds.forEach {
-            it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, false)
-            it.setGameRule(GameRule.KEEP_INVENTORY, false)
         }
         sc.objectives.forEach { it.unregister() }
         sc.teams.forEach { it.unregister() }

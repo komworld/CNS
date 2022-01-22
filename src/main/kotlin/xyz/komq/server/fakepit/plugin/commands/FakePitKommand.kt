@@ -71,8 +71,8 @@ object FakePitKommand {
 
                             players.forEach {
                                 playerNameList.add(it.name)
+                                it.gameMode = GameMode.ADVENTURE
                                 it.inventory.setItem(0, sword)
-                                it.inventory.setItem(1, ItemStack(Material.BREAD, 16))
                             }
 
                             server.broadcast(text("DEBUG: $players"))
@@ -83,9 +83,6 @@ object FakePitKommand {
 
                             fun teamConfiguration() {
                                 val teamPlayer = requireNotNull(server.getPlayer(playerNameList[teamCount]))
-
-                                server.broadcast(text("DEBUG: $teamCount"))
-                                server.broadcast(text("DEBUG: ${playerNameList[teamCount]}"))
 
                                 addTeam(playerNameList[teamCount], teamCount)
                                 setupArmors(teamCount, teamPlayer)
@@ -108,10 +105,11 @@ object FakePitKommand {
                             server.worlds.forEach {
                                 it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
                                 it.setGameRule(GameRule.KEEP_INVENTORY, true)
+                                it.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false)
                             }
 
                             server.pluginManager.registerEvents(FakePitEvent(), getInstance())
-                            server.scheduler.runTaskTimer(getInstance(), FakePitGameTask(), 0L, 20L)
+                            server.scheduler.runTaskTimer(getInstance(), FakePitGameTask(), 0L, 14L)
                             server.scheduler.runTaskTimer(getInstance(), FakePitZeroTickTask(), 0L, 0L)
 
                             val randomPlayer = server.onlinePlayers.toList()[0]

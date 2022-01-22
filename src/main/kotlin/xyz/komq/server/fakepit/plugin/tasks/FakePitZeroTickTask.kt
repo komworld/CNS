@@ -9,6 +9,8 @@ package xyz.komq.server.fakepit.plugin.tasks
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.hasNetherStar
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.initialKill
@@ -40,16 +42,18 @@ class FakePitZeroTickTask: Runnable {
                     }
                 }
                 else {
-                    it.sendActionBar(text("네더의 별 좌표 - X: ${itemDropLocX}, Y: ${itemDropLocY}, Z: $itemDropLocZ"))
+                    it.sendActionBar(text("네더의 별 좌표 | X: ${itemDropLocX}, Y: ${itemDropLocY}, Z: $itemDropLocZ"))
                 }
             }
 
-            if (it.scoreboard.getObjective("Points")?.getScore(it.name)?.score == 200) {
+            if (it.scoreboard.getObjective("Points")?.getScore(it.name)?.score == 100) {
                 stopGame()
                 it.sendMessage("우승자: ${it.name}")
                 val gameEndTask = server.scheduler.runTaskTimer(getInstance(), FakePitEndTask(), 0L, 20L)
                 server.scheduler.runTaskLater(getInstance(), Runnable { server.scheduler.cancelTask(gameEndTask.taskId) }, 20 * 15L)
             }
+
+            it.addPotionEffect(PotionEffect(PotionEffectType.SATURATION, 1000000, 255, false, false, false))
         }
     }
 }
