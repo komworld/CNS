@@ -6,12 +6,11 @@
 
 package xyz.komq.server.fakepit.plugin
 
+import org.bukkit.GameRule
 import org.bukkit.plugin.java.JavaPlugin
 import xyz.komq.server.fakepit.plugin.commands.FakePitKommand.fakePitKommand
 import xyz.komq.server.fakepit.plugin.config.FakePitConfig.load
-import xyz.komq.server.fakepit.plugin.events.FakePitEvent
 import xyz.komq.server.fakepit.plugin.tasks.FakePitConfigReloadTask
-import xyz.komq.server.fakepit.plugin.tasks.FakePitGameTask
 import java.io.File
 
 /***
@@ -35,5 +34,17 @@ class FakePitPluginMain : JavaPlugin() {
         load(configFile)
         server.scheduler.runTaskTimer(this, FakePitConfigReloadTask(), 0L, 20L)
         fakePitKommand()
+    }
+
+    override fun onDisable() {
+        server.onlinePlayers.forEach {
+            server.scoreboardManager.mainScoreboard.resetScores(it.name)
+        }
+        server.worlds.forEach {
+            it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, false)
+            it.setGameRule(GameRule.KEEP_INVENTORY, false)
+        }
+        server.scoreboardManager.mainScoreboard.objectives.forEach { it.unregister() }
+        server.scoreboardManager.mainScoreboard.teams.forEach { it.unregister() }
     }
 }

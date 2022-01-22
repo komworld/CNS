@@ -6,6 +6,7 @@
 
 package xyz.komq.server.fakepit.plugin.config
 
+import io.github.monun.tap.config.Config
 import io.github.monun.tap.config.ConfigSupport
 import java.io.File
 
@@ -17,6 +18,9 @@ import java.io.File
  */
 
 object FakePitConfig {
+    @Config
+    var allowAdminsToPlay = false
+
     fun load(configFile: File) {
         ConfigSupport.compute(this, configFile)
     }

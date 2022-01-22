@@ -40,4 +40,19 @@ tasks {
             }
         }
     }
+    register<Jar>("paperJar") {
+        archiveBaseName.set(project.name)
+        archiveClassifier.set("")
+        archiveVersion.set("")
+
+        from(sourceSets["main"].output)
+
+        doLast {
+            copy {
+                from(archiveFile)
+                val plugins = File(rootDir, ".server/plugins/")
+                into(if (File(plugins, archiveFileName.get()).exists()) File(plugins, "update") else plugins)
+            }
+        }
+    }
 }

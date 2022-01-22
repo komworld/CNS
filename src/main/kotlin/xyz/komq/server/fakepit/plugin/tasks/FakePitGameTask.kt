@@ -6,6 +6,12 @@
 
 package xyz.komq.server.fakepit.plugin.tasks
 
+import org.bukkit.Sound
+import org.bukkit.SoundCategory
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.hasNetherStar
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.isRunning
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
+
 /***
  * @author BaeHyeonWoo
  *
@@ -15,6 +21,14 @@ package xyz.komq.server.fakepit.plugin.tasks
 
 class FakePitGameTask: Runnable {
     override fun run() {
-
+        server.onlinePlayers.forEach {
+            if (isRunning) {
+                if (hasNetherStar[it.uniqueId] == true) {
+                    val scoreObjective = requireNotNull(it.scoreboard.getObjective("Points"))
+                    scoreObjective.getScore(it.name).score = scoreObjective.getScore(it.name).score + 1
+                    it.playSound(it.location, Sound.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, 1000F, 2F)
+                }
+            }
+        }
     }
 }
