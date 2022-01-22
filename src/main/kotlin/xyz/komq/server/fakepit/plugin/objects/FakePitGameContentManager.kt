@@ -9,6 +9,8 @@ package xyz.komq.server.fakepit.plugin.objects
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.title.Title.Times.of
+import net.kyori.adventure.title.Title.title
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Material
@@ -22,7 +24,7 @@ import org.bukkit.plugin.Plugin
 import org.bukkit.scoreboard.Team
 import xyz.komq.server.fakepit.plugin.FakePitPluginMain
 import xyz.komq.server.fakepit.plugin.commands.FakePitKommand.playerNameList
-import xyz.komq.server.fakepit.plugin.tasks.FakePitConfigReloadTask
+import java.time.Duration.ofSeconds
 import java.util.*
 
 /***
@@ -56,6 +58,8 @@ object FakePitGameContentManager {
     var itemDropLocY = 0
     var itemDropLocZ = 0
     var initialKill = 0
+    var winner = ""
+    var onlyOne = false
     lateinit var netherStarOwner: Player
 
     val playerTeam = HashMap<UUID, Team?>()
@@ -70,22 +74,25 @@ object FakePitGameContentManager {
     private val sm = server.scoreboardManager
     val sc = sm.mainScoreboard
 
-    private val red = sc.getTeam("Red")
-    private val orange = sc.getTeam("Orange")
-    private val yellow = sc.getTeam("Yellow")
-    private val green = sc.getTeam("Green")
-    private val darkGreen = sc.getTeam("DarkGreen")
-    private val aqua = sc.getTeam("Aqua")
-    private val blue = sc.getTeam("Blue")
-    private val purple = sc.getTeam("Purple")
-    private val white = sc.getTeam("White")
-    private val gray = sc.getTeam("Gray")
-    private val darkAqua = sc.getTeam("DarkAqua")
-    private val pink = sc.getTeam("Pink")
+    val red = sc.getTeam("Red")
+    val orange = sc.getTeam("Orange")
+    val yellow = sc.getTeam("Yellow")
+    val green = sc.getTeam("Green")
+    val darkGreen = sc.getTeam("DarkGreen")
+    val aqua = sc.getTeam("Aqua")
+    val blue = sc.getTeam("Blue")
+    val purple = sc.getTeam("Purple")
+    val white = sc.getTeam("White")
+    val gray = sc.getTeam("Gray")
+    val darkAqua = sc.getTeam("DarkAqua")
+    val pink = sc.getTeam("Pink")
 
     fun setupScoreboards() {
         val point = sc.getObjective("Points")
         if (point == null) sc.registerNewObjective("Points", "dummy", text("POINTS", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
+
+        val health = sc.getObjective("Health")
+        if (health == null) sc.registerNewObjective("Health", "health", text("♥", NamedTextColor.RED))
 
         if (red == null) sc.registerNewTeam("Red")
 
@@ -110,21 +117,6 @@ object FakePitGameContentManager {
         if (darkAqua == null) sc.registerNewTeam("DarkAqua")
 
         if (pink == null) sc.registerNewTeam("Pink")
-
-        server.scheduler.runTaskLater(getInstance(), Runnable {
-            red?.color(NamedTextColor.RED)
-            orange?.color(NamedTextColor.GOLD)
-            yellow?.color(NamedTextColor.YELLOW)
-            green?.color(NamedTextColor.GREEN)
-            darkGreen?.color(NamedTextColor.DARK_GREEN)
-            aqua?.color(NamedTextColor.AQUA)
-            blue?.color(NamedTextColor.BLUE)
-            purple?.color(NamedTextColor.DARK_PURPLE)
-            white?.color(NamedTextColor.WHITE)
-            gray?.color(NamedTextColor.GRAY)
-            darkAqua?.color(NamedTextColor.DARK_AQUA)
-            pink?.color(NamedTextColor.LIGHT_PURPLE)
-        }, 20L)
     }
 
     fun addTeam(name: String, teamCount: Int) {
@@ -327,7 +319,6 @@ object FakePitGameContentManager {
     fun stopGame() {
         HandlerList.unregisterAll(getInstance())
         server.scheduler.cancelTasks(getInstance())
-        server.scheduler.runTaskTimer(getInstance(), FakePitConfigReloadTask(), 0L, 20L)
         playerNameList.clear()
         server.onlinePlayers.forEach {
             it.inventory.clear()
@@ -339,7 +330,20 @@ object FakePitGameContentManager {
         sc.teams.forEach { it.unregister() }
         teamCount = 0
         initialKill = 0
+        itemDrop = false
         isRunning = false
+    }
+
+    fun titleFunc(OnlyOne: Boolean) {
+        server.onlinePlayers.forEach {
+            if (!OnlyOne) {
+                it.resetTitle()
+                it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("우승자: $winner"), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
+            } else {
+                it.resetTitle()
+                it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("모든 사람들이 나갔습니다!"), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
+            }
+        }
     }
 
     private fun setupMetas(meta: LeatherArmorMeta, color: Color): LeatherArmorMeta {

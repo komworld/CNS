@@ -21,6 +21,7 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDrop
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.stopGame
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.winner
 
 /***
  * @author BaeHyeonWoo
@@ -33,7 +34,7 @@ class FakePitZeroTickTask: Runnable {
     override fun run() {
         server.onlinePlayers.forEach {
             if (hasNetherStar[it.uniqueId] == true) {
-                it.sendActionBar(text("네더의 별을 가지고 있습니다!", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
+                it.sendActionBar(text("현재 네더의 별을 소유하고 계십니다! 최대한 오래 살아남으세요!", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
             }
             else {
                 if (!itemDrop) {
@@ -48,9 +49,9 @@ class FakePitZeroTickTask: Runnable {
 
             if (it.scoreboard.getObjective("Points")?.getScore(it.name)?.score == 100) {
                 stopGame()
-                it.sendMessage("우승자: ${it.name}")
-                val gameEndTask = server.scheduler.runTaskTimer(getInstance(), FakePitEndTask(), 0L, 20L)
-                server.scheduler.runTaskLater(getInstance(), Runnable { server.scheduler.cancelTask(gameEndTask.taskId) }, 20 * 15L)
+                server.scheduler.runTaskTimer(getInstance(), FakePitEndTask(), 0L, 0L)
+                winner = it.name
+                server.scheduler.runTaskLater(getInstance(), Runnable { server.scheduler.cancelTasks(getInstance()); server.scheduler.runTaskTimer(getInstance(), FakePitConfigReloadTask(), 0L, 20L) }, 20 * 15L)
             }
 
             it.addPotionEffect(PotionEffect(PotionEffectType.SATURATION, 1000000, 255, false, false, false))

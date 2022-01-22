@@ -10,6 +10,8 @@ import io.github.monun.kommand.getValue
 import io.github.monun.kommand.kommand
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.title.Title.Times.of
+import net.kyori.adventure.title.Title.title
 import org.bukkit.GameMode
 import org.bukkit.GameRule
 import org.bukkit.Location
@@ -17,9 +19,12 @@ import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scoreboard.DisplaySlot
 import xyz.komq.server.fakepit.plugin.events.FakePitEvent
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.addTeam
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.administrators
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.hasNetherStar
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.initialKill
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.isRunning
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
@@ -30,8 +35,10 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.setupSco
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.stopGame
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.teamCount
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.unbreakableMeta
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.winner
 import xyz.komq.server.fakepit.plugin.tasks.FakePitGameTask
 import xyz.komq.server.fakepit.plugin.tasks.FakePitZeroTickTask
+import java.time.Duration.ofSeconds
 
 /***
  * @author BaeHyeonWoo
@@ -58,7 +65,7 @@ object FakePitKommand {
                                         forEachP.sendMessage(text("관리자 -> GAMEMODE: SPECTATOR"))
                                     }
                                 }
-                                forEachP.teleport(Location(forEachP.world, 0.5, 75.5, 0.5))
+                                forEachP.teleport(Location(forEachP.world, 0.5, 72.5, 0.5))
                             }
 
                             val players = server.onlinePlayers.asSequence().filter {
@@ -75,11 +82,24 @@ object FakePitKommand {
                                 it.inventory.setItem(0, sword)
                             }
 
-                            server.broadcast(text("DEBUG: $players"))
-
                             playerNameList.shuffle()
                             setupScoreboards()
+
+                            FakePitGameContentManager.red?.color(NamedTextColor.RED)
+                            FakePitGameContentManager.orange?.color(NamedTextColor.GOLD)
+                            FakePitGameContentManager.yellow?.color(NamedTextColor.YELLOW)
+                            FakePitGameContentManager.green?.color(NamedTextColor.GREEN)
+                            FakePitGameContentManager.darkGreen?.color(NamedTextColor.DARK_GREEN)
+                            FakePitGameContentManager.aqua?.color(NamedTextColor.AQUA)
+                            FakePitGameContentManager.blue?.color(NamedTextColor.BLUE)
+                            FakePitGameContentManager.purple?.color(NamedTextColor.DARK_PURPLE)
+                            FakePitGameContentManager.white?.color(NamedTextColor.WHITE)
+                            FakePitGameContentManager.gray?.color(NamedTextColor.GRAY)
+                            FakePitGameContentManager.darkAqua?.color(NamedTextColor.DARK_AQUA)
+                            FakePitGameContentManager.pink?.color(NamedTextColor.LIGHT_PURPLE)
+
                             sc.getObjective("Points")?.displaySlot = DisplaySlot.SIDEBAR
+                            sc.getObjective("Health")?.displaySlot = DisplaySlot.BELOW_NAME
 
                             fun teamConfiguration() {
                                 val teamPlayer = requireNotNull(server.getPlayer(playerNameList[teamCount]))
@@ -91,10 +111,10 @@ object FakePitKommand {
                             }
 
                             while (teamCount != playerNameList.size) {
-                                if (playerNameList.size < 13) {
+                                if (server.onlinePlayers.size != 12) {
                                     teamConfiguration()
                                 }
-                                else {
+                                else if (server.onlinePlayers.size >= 13 || server.onlinePlayers.size == 1){
                                     server.broadcast(text("The game could not be process because the server has more people than the maximum playable players.", NamedTextColor.RED))
                                     server.broadcast(text("Please turn some of the players into spectators. Otherwise the game would not work.", NamedTextColor.RED))
                                     server.broadcast(text("Minimum playable player count: 2 | Maximum playable player count: 12"))
@@ -116,7 +136,33 @@ object FakePitKommand {
 
                             netherStarOwner = randomPlayer
                             isRunning = true
+
                             server.broadcast(text("Game Started."))
+
+                            var count = 0
+
+                            server.scheduler.runTaskTimer(getInstance(), Runnable {
+                                when(count++) {
+                                    60 -> {
+                                        if (initialKill == 0) {
+                                            initialKill = 1
+                                            randomPlayer.inventory.setItemInOffHand(ItemStack(Material.NETHER_STAR))
+                                            randomPlayer.isGlowing = true
+                                            hasNetherStar[randomPlayer.uniqueId] = true
+                                            server.broadcast(text("1분동안 아무도 죽이지 않아 랜덤으로 네더의 별이 지급되었습니다!"))
+                                            server.broadcast(text("${randomPlayer.name}님이 첫 네더의 별을 소유하고 있습니다!"))
+                                        }
+                                    }
+                                    1200 -> {
+                                        stopGame()
+                                        server.broadcast(text("20분동안 아무도 승리 조건을 달성하지 못하여 게임이 강제 종료되었습니다!"))
+                                        server.onlinePlayers.forEach {
+                                            it.resetTitle()
+                                            it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("우승자: $winner"), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
+                                        }
+                                    }
+                                }
+                            }, 0L, 20L)
                         }
                     }
                 }

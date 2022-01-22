@@ -16,13 +16,16 @@ package xyz.komq.server.fakepit.plugin.events
 import net.kyori.adventure.text.Component.text
 import org.bukkit.ChatColor
 import org.bukkit.Material
+import org.bukkit.Tag
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.block.Action
+import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.block.BlockPhysicsEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.*
 import org.bukkit.inventory.EquipmentSlot
@@ -30,7 +33,6 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Vector
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.deathLocation
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.hasNetherStar
@@ -40,13 +42,18 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDrop
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocY
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocZ
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.onlyOne
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeam
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.sc
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.setupArmors
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.stopGame
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.unbreakableMeta
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.wasDead
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.winner
+import xyz.komq.server.fakepit.plugin.tasks.FakePitConfigReloadTask
+import xyz.komq.server.fakepit.plugin.tasks.FakePitEndTask
 
 class FakePitEvent : Listener {
     @EventHandler
@@ -89,7 +96,10 @@ class FakePitEvent : Listener {
             if (server.onlinePlayers.size == 1) {
                 stopGame()
                 server.onlinePlayers.forEach {
-                    server.broadcast(text("우승자 ${it.name} / 플레이어들이 나감"))
+                    server.scheduler.runTaskTimer(getInstance(), FakePitEndTask(), 0L, 20L)
+                    onlyOne = true
+                    winner = it.name
+                    server.scheduler.runTaskLater(getInstance(), Runnable { server.scheduler.cancelTasks(getInstance()); server.scheduler.runTaskTimer(getInstance(), FakePitConfigReloadTask(), 0L, 20L) }, 20 * 15L)
                 }
             }
         }, 4L)
@@ -147,7 +157,7 @@ class FakePitEvent : Listener {
         val p = e.player
 
         val sword = ItemStack(Material.STONE_SWORD)
-        val swordMeta = FakePitGameContentManager.unbreakableMeta(sword.itemMeta)
+        val swordMeta = unbreakableMeta(sword.itemMeta)
         sword.itemMeta = swordMeta
         p.inventory.clear()
         p.inventory.setItemInMainHand(sword)
@@ -180,33 +190,37 @@ class FakePitEvent : Listener {
     }
 
     @EventHandler
+    fun onBlockBreak(e: BlockBreakEvent) {
+        e.isCancelled = true
+    }
+
+    @EventHandler
+    fun onBlockPhysics(e: BlockPhysicsEvent) {
+        e.isCancelled = true
+    }
+
+    @EventHandler
     fun onPlayerDropItem(e: PlayerDropItemEvent) {
-        if (e.itemDrop.itemStack.type == Material.NETHER_STAR) e.isCancelled = true
+        e.isCancelled = true
     }
 
     @EventHandler
     fun onPlayerInteract(e: PlayerInteractEvent) {
         if (e.item?.type == Material.NETHER_STAR) e.isCancelled = true
+        if (e.action == Action.RIGHT_CLICK_BLOCK) {
+            if (Tag.BEDS.isTagged(requireNotNull(e.clickedBlock).type)) {
+                e.isCancelled = true
+            }
+        }
     }
 
     @EventHandler
     fun onPlayerSwapHandItems(e: PlayerSwapHandItemsEvent) {
-        if (e.offHandItem?.type == Material.NETHER_STAR || e.mainHandItem?.type == Material.NETHER_STAR) e.isCancelled = true
+        e.isCancelled = true
     }
 
     @EventHandler
     fun onInventoryClick(e: InventoryClickEvent) {
-        e.currentItem?.let {
-            if (it.type == Material.NETHER_STAR) {
-                e.isCancelled = true
-            }
-        }
-
-        if (e.action == InventoryAction.HOTBAR_SWAP) {
-            val item = e.whoClicked.inventory.getItem(e.hotbarButton)
-            if (item != null && item.type == Material.NETHER_STAR) {
-                e.isCancelled = true
-            }
-        }
+        e.isCancelled = true
     }
 }
