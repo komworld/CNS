@@ -9,16 +9,18 @@ package xyz.komq.server.fakepit.plugin.tasks
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.ChatColor
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.hasNetherStar
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getTeamChatColor
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.initialKill
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDrop
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocX
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocY
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocZ
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.stopGame
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.winner
@@ -33,18 +35,13 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.winner
 class FakePitZeroTickTask: Runnable {
     override fun run() {
         server.onlinePlayers.forEach {
-            if (hasNetherStar[it.uniqueId] == true) {
-                it.sendActionBar(text("현재 네더의 별을 소유하고 계십니다! 최대한 오래 살아남으세요!", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
+            if (!itemDrop) {
+                if (initialKill == 1) {
+                    it.sendActionBar(text("${ChatColor.AQUA}네더의 별 소유자: ${getTeamChatColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
+                }
             }
             else {
-                if (!itemDrop) {
-                    if (initialKill == 1) {
-                        it.sendActionBar(text("네더의 별 소유자: ${netherStarOwner.name}", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
-                    }
-                }
-                else {
-                    it.sendActionBar(text("네더의 별 좌표 | X: ${itemDropLocX}, Y: ${itemDropLocY}, Z: $itemDropLocZ"))
-                }
+                it.sendActionBar(text("네더의 별 좌표 | X: ${itemDropLocX}, Y: ${itemDropLocY}, Z: $itemDropLocZ"))
             }
 
             if (it.scoreboard.getObjective("Points")?.getScore(it.name)?.score == 100) {

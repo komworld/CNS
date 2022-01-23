@@ -22,6 +22,7 @@ import org.bukkit.plugin.Plugin
 import org.bukkit.scoreboard.Team
 import xyz.komq.server.fakepit.plugin.FakePitPluginMain
 import xyz.komq.server.fakepit.plugin.commands.FakePitKommand.playerNameList
+import xyz.komq.server.fakepit.plugin.events.FakePitEvent
 import java.time.Duration.ofSeconds
 import java.util.*
 
@@ -155,10 +156,10 @@ object FakePitGameContentManager {
         }
     }
 
-    fun getTeamChatColor(teamcount: Int): ChatColor {
+    fun getTeamChatColor(teamCount: Int): ChatColor {
         var color = ChatColor.RESET
 
-        when (teamcount) {
+        when (teamCount) {
             0 -> { color = ChatColor.RED }
             1 -> { color = ChatColor.GOLD }
             2 -> { color = ChatColor.YELLOW }
@@ -233,6 +234,7 @@ object FakePitGameContentManager {
             hasNetherStar[it.uniqueId] = false
             it.isGlowing = false
         }
+        FakePitEvent().quitArray.clear()
         sc.objectives.forEach { it.unregister() }
         sc.teams.forEach { it.unregister() }
         teamCount = 0

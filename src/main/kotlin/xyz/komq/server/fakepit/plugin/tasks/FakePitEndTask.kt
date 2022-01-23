@@ -7,7 +7,6 @@
 package xyz.komq.server.fakepit.plugin.tasks
 
 import io.github.monun.tap.effect.playFirework
-import net.kyori.adventure.text.Component.text
 import org.bukkit.*
 import org.bukkit.potion.PotionEffectType
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.onlyOne
@@ -61,7 +60,6 @@ class FakePitEndTask: Runnable {
                     else {
                         titleFunc(true)
                     }
-                    server.broadcast(text(winner))
                     it.removePotionEffect(PotionEffectType.SATURATION)
                     it.playSound(it.location, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, SoundCategory.MASTER, 1000F, 1F)
                 }

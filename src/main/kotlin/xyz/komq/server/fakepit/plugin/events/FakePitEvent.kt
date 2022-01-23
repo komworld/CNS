@@ -15,6 +15,7 @@ package xyz.komq.server.fakepit.plugin.events
 
 import net.kyori.adventure.text.Component.text
 import org.bukkit.ChatColor
+import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.Tag
 import org.bukkit.entity.Player
@@ -56,8 +57,13 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.wasDead
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.winner
 import xyz.komq.server.fakepit.plugin.tasks.FakePitConfigReloadTask
 import xyz.komq.server.fakepit.plugin.tasks.FakePitEndTask
+import java.util.*
+import kotlin.collections.ArrayList
 
 class FakePitEvent : Listener {
+
+    var quitArray = ArrayList<UUID>()
+
     @EventHandler
     fun onEntityDamage(e: EntityDamageEvent) {
         if (e.entity is Player) {
@@ -68,12 +74,23 @@ class FakePitEvent : Listener {
     }
 
     @EventHandler
+    fun onPlayerJoin(e: PlayerJoinEvent) {
+        val p = e.player
+
+        if (p.uniqueId in quitArray) {
+            p.gameMode = GameMode.SPECTATOR
+            p.sendMessage(text("게임에서 퇴장하시어 관전자 상태로 전환되었습니다!"))
+        }
+    }
+
+    @EventHandler
     fun onPlayerQuit(e: PlayerQuitEvent) {
         val p = e.player
         val playerTeam = getTeam(requireNotNull(playerTeamCount[p.uniqueId]))
         val scoreObjective = sc.getObjective("Points")
         val playerScoreValue = scoreObjective?.getScore(p.name)?.score
 
+        quitArray.add(p.uniqueId)
         p.inventory.clear()
         playerTeam?.unregister()
         sc.resetScores(p.name)
@@ -119,7 +136,7 @@ class FakePitEvent : Listener {
                 netherStarOwner = killer
                 killer.inventory.setItem(EquipmentSlot.OFF_HAND, netherStarItem())
                 killer.isGlowing = true
-                server.broadcast(text("${killer.name}님이 첫 네더의 별을 소유하고 있습니다!"))
+                server.broadcast(text("${getTeamChatColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${killer.name}${ChatColor.RESET}님이 첫 네더의 별을 소유하고 있습니다!"))
             }
             else if (hasNetherStar[p.uniqueId] == true) {
                 p.isGlowing = false
@@ -128,7 +145,7 @@ class FakePitEvent : Listener {
                 hasNetherStar[killer.uniqueId] = true
                 netherStarOwner = killer
                 killer.inventory.setItem(EquipmentSlot.OFF_HAND, netherStarItem())
-                server.broadcast(text("${killer.name}님이 네더의 별을 소유하고 있습니다!"))
+                server.broadcast(text("${getTeamChatColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${killer.name}${ChatColor.RESET}님이 네더의 별을 소유하고 있습니다!"))
             }
         }
         deathLocation[p.uniqueId] = p.location
@@ -148,7 +165,7 @@ class FakePitEvent : Listener {
                 p.inventory.setItemInOffHand(netherStarItem())
                 e.isCancelled = true
 
-                server.broadcast(text("${p.name}님이 네더의 별을 주우셨습니다!"))
+                server.broadcast(text("${getTeamChatColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${p.name}${ChatColor.RESET}님이 네더의 별을 주우셨습니다!"))
             }
         }
     }
@@ -211,10 +228,6 @@ class FakePitEvent : Listener {
             if (Tag.BEDS.isTagged(requireNotNull(e.clickedBlock).type)) {
                 e.isCancelled = true
             }
-        }
-
-        if (e.action == Action.PHYSICAL && e.material == Material.FARMLAND) {
-            e.isCancelled = true
         }
     }
 

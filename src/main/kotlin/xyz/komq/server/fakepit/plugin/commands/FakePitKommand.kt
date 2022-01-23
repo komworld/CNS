@@ -130,7 +130,10 @@ object FakePitKommand {
                                     it.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false)
                                 }
 
-                                server.onlinePlayers.forEach { it.teleport(Location(it.world, 0.5, 72.5, 0.5)) }
+                                server.onlinePlayers.forEach {
+                                    it.teleport(Location(it.world, 0.5, 72.5, 0.5))
+                                    it.damage(0.5)
+                                }
 
                                 server.pluginManager.registerEvents(FakePitEvent(), getInstance())
                                 server.scheduler.runTaskTimer(getInstance(), FakePitGameTask(), 0L, 14L)
