@@ -48,6 +48,7 @@ import java.time.Duration.ofSeconds
 
 object FakePitKommand {
     val playerNameList = ArrayList<String>()
+    private val playerUUIDList = ArrayList<String>()
 
     fun fakePitKommand() {
         getInstance().kommand {
@@ -76,6 +77,7 @@ object FakePitKommand {
 
                             players.forEach {
                                 playerNameList.add(it.name)
+                                playerUUIDList.add(it.uniqueId.toString())
                                 it.gameMode = GameMode.ADVENTURE
                                 it.inventory.setItem(0, sword)
                             }
@@ -108,16 +110,22 @@ object FakePitKommand {
                                 ++teamCount
                             }
 
-                            var playable = true
+                            var playable = false
 
                             while (teamCount != playerNameList.size) {
                                 if (server.onlinePlayers.size in 2..12) {
                                     teamConfiguration()
+                                    playable = true
+                                }
+                                else if (server.onlinePlayers.size <= 13) {
+                                    if (administrators.toString() in playerUUIDList) {
+                                        playable = true
+                                    }
                                 }
                                 else {
-                                    server.broadcast(text("The game could not be process because the server has less/more players than the minumum/maximum playable players.", NamedTextColor.RED))
-                                    server.broadcast(text("Please turn some of the players into spectators. Otherwise the game would not work.", NamedTextColor.RED))
-                                    server.broadcast(text("Minimum playable player count: 2 | Maximum playable player count: 12"))
+                                    server.broadcast(text("최대/최소 플레이 가능 플레이어 수가 적거나 많습니다.", NamedTextColor.RED))
+                                    server.broadcast(text("몇몇 플레이어들을 관전자로 바꿔주세요. 그렇지 않으면 게임이 실행 될 수 없습니다.", NamedTextColor.RED))
+                                    server.broadcast(text("최소 플레이어 수: 2 / 최대 플레이어 수: 12"))
                                     stopGame()
                                     playable = false
                                 }
@@ -132,7 +140,11 @@ object FakePitKommand {
 
                                 server.onlinePlayers.forEach {
                                     it.teleport(Location(it.world, 0.5, 72.5, 0.5))
+                                    it.health = 20.0
+                                    it.foodLevel = 20
                                     it.damage(0.5)
+                                    it.scoreboard.getObjective("Points")?.getScore(it.name)?.score = 1
+                                    it.scoreboard.getObjective("Points")?.getScore(it.name)?.score = 0
                                 }
 
                                 server.pluginManager.registerEvents(FakePitEvent(), getInstance())
