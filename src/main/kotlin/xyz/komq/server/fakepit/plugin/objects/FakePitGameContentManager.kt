@@ -11,10 +11,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title.Times.of
 import net.kyori.adventure.title.Title.title
-import org.bukkit.Color
-import org.bukkit.Location
-import org.bukkit.Material
-import org.bukkit.World
+import org.bukkit.*
 import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
 import org.bukkit.inventory.ItemStack
@@ -64,7 +61,7 @@ object FakePitGameContentManager {
     lateinit var netherStarOwner: Player
     lateinit var playingWorld: World
 
-    val playerTeam = HashMap<UUID, Team?>()
+    private val playerTeam = HashMap<UUID, Team?>()
     val playerTeamCount = HashMap<UUID, Int>()
     val wasDead = HashMap<UUID, Boolean>()
     val hasNetherStar = HashMap<UUID, Boolean>()
@@ -75,18 +72,18 @@ object FakePitGameContentManager {
     private val sm = server.scoreboardManager
     val sc = sm.mainScoreboard
 
-    val red = sc.getTeam("Red")
-    val orange = sc.getTeam("Orange")
-    val yellow = sc.getTeam("Yellow")
-    val green = sc.getTeam("Green")
-    val darkGreen = sc.getTeam("DarkGreen")
-    val aqua = sc.getTeam("Aqua")
-    val blue = sc.getTeam("Blue")
-    val purple = sc.getTeam("Purple")
-    val white = sc.getTeam("White")
-    val gray = sc.getTeam("Gray")
-    val darkAqua = sc.getTeam("DarkAqua")
-    val pink = sc.getTeam("Pink")
+    private val red = sc.getTeam("Red")
+    private val orange = sc.getTeam("Orange")
+    private val yellow = sc.getTeam("Yellow")
+    private val green = sc.getTeam("Green")
+    private val darkGreen = sc.getTeam("DarkGreen")
+    private val aqua = sc.getTeam("Aqua")
+    private val blue = sc.getTeam("Blue")
+    private val purple = sc.getTeam("Purple")
+    private val white = sc.getTeam("White")
+    private val gray = sc.getTeam("Gray")
+    private val darkAqua = sc.getTeam("DarkAqua")
+    private val pink = sc.getTeam("Pink")
 
     fun setupScoreboards() {
         val point = sc.getObjective("Points")
@@ -120,23 +117,63 @@ object FakePitGameContentManager {
         if (pink == null) sc.registerNewTeam("Pink")
     }
 
+    fun getTeam(teamCount: Int): Team? {
+        var team = sc.getTeam("")
+        when (teamCount) {
+            0 -> { team = sc.getTeam("Red") }
+            1 -> { team = sc.getTeam("Orange") }
+            2 -> { team = sc.getTeam("Yellow") }
+            3 -> { team = sc.getTeam("Green") }
+            4 -> { team = sc.getTeam("DarkGreen") }
+            5 -> { team = sc.getTeam("Aqua") }
+            6 -> { team = sc.getTeam("Blue") }
+            7 -> { team = sc.getTeam("Purple") }
+            8 -> { team = sc.getTeam("White") }
+            9 -> { team = sc.getTeam("Gray") }
+            10 -> { team = sc.getTeam("DarkAqua") }
+            11 -> { team = sc.getTeam("Pink") }
+        }
+
+        return team
+    }
+
     fun addTeam(name: String, teamCount: Int) {
         val player = requireNotNull(server.getPlayer(name))
-
         when (teamCount) {
-            0 -> { red?.addEntry(name); playerTeam[player.uniqueId] = red }
-            1 -> { orange?.addEntry(name); playerTeam[player.uniqueId] = orange }
-            2 -> { yellow?.addEntry(name); playerTeam[player.uniqueId] = yellow }
-            3 -> { green?.addEntry(name); playerTeam[player.uniqueId] = green }
-            4 -> { darkGreen?.addEntry(name); playerTeam[player.uniqueId] = darkGreen }
-            5 -> { aqua?.addEntry(name); playerTeam[player.uniqueId] = aqua }
-            6 -> { blue?.addEntry(name); playerTeam[player.uniqueId] = blue }
-            7 -> { purple?.addEntry(name); playerTeam[player.uniqueId] = purple }
-            8 -> { white?.addEntry(name); playerTeam[player.uniqueId] = white }
-            9 -> { gray?.addEntry(name); playerTeam[player.uniqueId] = gray }
-            10 -> { darkAqua?.addEntry(name); playerTeam[player.uniqueId] = darkAqua }
-            11 -> { pink?.addEntry(name); playerTeam[player.uniqueId] = pink }
+            0 -> { sc.getTeam("Red")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("Red") }
+            1 -> { sc.getTeam("Orange")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("Orange") }
+            2 -> { sc.getTeam("Yellow")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("Yellow") }
+            3 -> { sc.getTeam("Green")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("Green") }
+            4 -> { sc.getTeam("DarkGreen")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("DarkGreen") }
+            5 -> { sc.getTeam("Aqua")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("Aqua") }
+            6 -> { sc.getTeam("Blue")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("Blue") }
+            7 -> { sc.getTeam("Purple")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("Purple") }
+            8 -> { sc.getTeam("White")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("White") }
+            9 -> { sc.getTeam("Gray")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("Gray") }
+            10 -> { sc.getTeam("DarkAqua")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("DarkAqua") }
+            11 -> { sc.getTeam("Pink")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("Pink") }
         }
+    }
+
+    fun getTeamChatColor(teamcount: Int): ChatColor {
+        var color = ChatColor.RESET
+
+        when (teamcount) {
+            0 -> { color = ChatColor.RED }
+            1 -> { color = ChatColor.GOLD }
+            2 -> { color = ChatColor.YELLOW }
+            3 -> { color = ChatColor.GREEN }
+            4 -> { color = ChatColor.DARK_GREEN }
+            5 -> { color = ChatColor.AQUA }
+            6 -> { color = ChatColor.BLUE }
+            7 -> { color = ChatColor.DARK_PURPLE }
+            8 -> { color = ChatColor.WHITE }
+            9 -> { color = ChatColor.GRAY }
+            10 -> { color = ChatColor.DARK_AQUA }
+            11 -> { color = ChatColor.LIGHT_PURPLE }
+        }
+
+        return color
     }
 
     fun setupArmors(teamCount: Int, player: Player) {

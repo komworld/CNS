@@ -19,7 +19,6 @@ import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scoreboard.DisplaySlot
 import xyz.komq.server.fakepit.plugin.events.FakePitEvent
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.addTeam
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.administrators
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
@@ -65,7 +64,6 @@ object FakePitKommand {
                                         forEachP.sendMessage(text("관리자 -> GAMEMODE: SPECTATOR"))
                                     }
                                 }
-                                forEachP.teleport(Location(forEachP.world, 0.5, 72.5, 0.5))
                             }
 
                             val players = server.onlinePlayers.asSequence().filter {
@@ -85,18 +83,18 @@ object FakePitKommand {
                             playerNameList.shuffle()
                             setupScoreboards()
 
-                            FakePitGameContentManager.red?.color(NamedTextColor.RED)
-                            FakePitGameContentManager.orange?.color(NamedTextColor.GOLD)
-                            FakePitGameContentManager.yellow?.color(NamedTextColor.YELLOW)
-                            FakePitGameContentManager.green?.color(NamedTextColor.GREEN)
-                            FakePitGameContentManager.darkGreen?.color(NamedTextColor.DARK_GREEN)
-                            FakePitGameContentManager.aqua?.color(NamedTextColor.AQUA)
-                            FakePitGameContentManager.blue?.color(NamedTextColor.BLUE)
-                            FakePitGameContentManager.purple?.color(NamedTextColor.DARK_PURPLE)
-                            FakePitGameContentManager.white?.color(NamedTextColor.WHITE)
-                            FakePitGameContentManager.gray?.color(NamedTextColor.GRAY)
-                            FakePitGameContentManager.darkAqua?.color(NamedTextColor.DARK_AQUA)
-                            FakePitGameContentManager.pink?.color(NamedTextColor.LIGHT_PURPLE)
+                            sc.getTeam("Red")?.color(NamedTextColor.RED)
+                            sc.getTeam("Orange")?.color(NamedTextColor.GOLD)
+                            sc.getTeam("Yellow")?.color(NamedTextColor.YELLOW)
+                            sc.getTeam("Green")?.color(NamedTextColor.GREEN)
+                            sc.getTeam("DarkGreen")?.color(NamedTextColor.DARK_GREEN)
+                            sc.getTeam("Aqua")?.color(NamedTextColor.AQUA)
+                            sc.getTeam("Blue")?.color(NamedTextColor.BLUE)
+                            sc.getTeam("Purple")?.color(NamedTextColor.DARK_PURPLE)
+                            sc.getTeam("White")?.color(NamedTextColor.WHITE)
+                            sc.getTeam("Gray")?.color(NamedTextColor.GRAY)
+                            sc.getTeam("DarkAqua")?.color(NamedTextColor.DARK_AQUA)
+                            sc.getTeam("Pink")?.color(NamedTextColor.LIGHT_PURPLE)
 
                             sc.getObjective("Points")?.displaySlot = DisplaySlot.SIDEBAR
                             sc.getObjective("Health")?.displaySlot = DisplaySlot.BELOW_NAME
@@ -110,60 +108,67 @@ object FakePitKommand {
                                 ++teamCount
                             }
 
+                            var playable = true
+
                             while (teamCount != playerNameList.size) {
-                                if (server.onlinePlayers.size != 12) {
+                                if (server.onlinePlayers.size in 2..12) {
                                     teamConfiguration()
                                 }
-                                else if (server.onlinePlayers.size >= 13 || server.onlinePlayers.size == 1){
-                                    server.broadcast(text("The game could not be process because the server has more people than the maximum playable players.", NamedTextColor.RED))
+                                else {
+                                    server.broadcast(text("The game could not be process because the server has less/more players than the minumum/maximum playable players.", NamedTextColor.RED))
                                     server.broadcast(text("Please turn some of the players into spectators. Otherwise the game would not work.", NamedTextColor.RED))
                                     server.broadcast(text("Minimum playable player count: 2 | Maximum playable player count: 12"))
                                     stopGame()
+                                    playable = false
                                 }
                             }
 
-                            server.worlds.forEach {
-                                it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
-                                it.setGameRule(GameRule.KEEP_INVENTORY, true)
-                                it.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false)
-                            }
-
-                            server.pluginManager.registerEvents(FakePitEvent(), getInstance())
-                            server.scheduler.runTaskTimer(getInstance(), FakePitGameTask(), 0L, 14L)
-                            server.scheduler.runTaskTimer(getInstance(), FakePitZeroTickTask(), 0L, 0L)
-
-                            val randomPlayer = server.onlinePlayers.toList()[0]
-
-                            netherStarOwner = randomPlayer
-                            playingWorld = randomPlayer.world
-                            isRunning = true
-
-                            var count = 0
-
-                            server.scheduler.runTaskTimer(getInstance(), Runnable {
-                                when(count++) {
-                                    60 -> {
-                                        if (initialKill == 0) {
-                                            initialKill = 1
-                                            randomPlayer.inventory.setItemInOffHand(ItemStack(Material.NETHER_STAR))
-                                            randomPlayer.isGlowing = true
-                                            hasNetherStar[randomPlayer.uniqueId] = true
-                                            server.broadcast(text("1분동안 아무도 죽이지 않아 랜덤으로 네더의 별이 지급되었습니다!"))
-                                            server.broadcast(text("${randomPlayer.name}님이 첫 네더의 별을 소유하고 있습니다!"))
-                                        }
-                                    }
-                                    1200 -> {
-                                        stopGame()
-                                        server.broadcast(text("20분동안 아무도 승리 조건을 달성하지 못하여 게임이 강제 종료되었습니다!"))
-                                        server.onlinePlayers.forEach {
-                                            it.resetTitle()
-                                            it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("무승부!", NamedTextColor.YELLOW), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
-                                        }
-                                    }
+                            if (playable) {
+                                server.worlds.forEach {
+                                    it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
+                                    it.setGameRule(GameRule.KEEP_INVENTORY, true)
+                                    it.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false)
                                 }
-                            }, 0L, 20L)
 
-                            server.broadcast(text("Game Started."))
+                                server.onlinePlayers.forEach { it.teleport(Location(it.world, 0.5, 72.5, 0.5)) }
+
+                                server.pluginManager.registerEvents(FakePitEvent(), getInstance())
+                                server.scheduler.runTaskTimer(getInstance(), FakePitGameTask(), 0L, 14L)
+                                server.scheduler.runTaskTimer(getInstance(), FakePitZeroTickTask(), 0L, 0L)
+
+                                val randomPlayer = server.onlinePlayers.toList()[0]
+
+                                netherStarOwner = randomPlayer
+                                playingWorld = randomPlayer.world
+                                isRunning = true
+
+                                var count = 0
+
+                                server.scheduler.runTaskTimer(getInstance(), Runnable {
+                                    when (count++) {
+                                        60 -> {
+                                            if (initialKill == 0) {
+                                                initialKill = 1
+                                                randomPlayer.inventory.setItemInOffHand(ItemStack(Material.NETHER_STAR))
+                                                randomPlayer.isGlowing = true
+                                                hasNetherStar[randomPlayer.uniqueId] = true
+                                                server.broadcast(text("1분동안 아무도 죽이지 않아 랜덤으로 네더의 별이 지급되었습니다!"))
+                                                server.broadcast(text("${randomPlayer.name}님이 첫 네더의 별을 소유하고 있습니다!"))
+                                            }
+                                        }
+                                        1200 -> {
+                                            stopGame()
+                                            server.broadcast(text("20분동안 아무도 승리 조건을 달성하지 못하여 게임이 강제 종료되었습니다!"))
+                                            server.onlinePlayers.forEach {
+                                                it.resetTitle()
+                                                it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("무승부!", NamedTextColor.YELLOW), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
+                                            }
+                                        }
+                                    }
+                                }, 0L, 20L)
+
+                                server.broadcast(text("Game Started."))
+                            }
                         }
                     }
                 }

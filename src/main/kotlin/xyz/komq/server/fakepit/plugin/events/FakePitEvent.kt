@@ -35,6 +35,8 @@ import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Vector
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.deathLocation
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getTeam
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getTeamChatColor
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.hasNetherStar
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.initialKill
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDrop
@@ -44,7 +46,6 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDrop
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarItem
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.onlyOne
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeam
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.sc
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
@@ -69,14 +70,14 @@ class FakePitEvent : Listener {
     @EventHandler
     fun onPlayerQuit(e: PlayerQuitEvent) {
         val p = e.player
-        val playerTeam = sc.getTeam(playerTeam[p.uniqueId].toString())
+        val playerTeam = getTeam(requireNotNull(playerTeamCount[p.uniqueId]))
         val scoreObjective = sc.getObjective("Points")
         val playerScoreValue = scoreObjective?.getScore(p.name)?.score
 
         p.inventory.clear()
         playerTeam?.unregister()
         sc.resetScores(p.name)
-        scoreObjective?.getScore("${ChatColor.GRAY}${ChatColor.STRIKETHROUGH}${p.name}${ChatColor.RESET}${ChatColor.GRAY} (서버 퇴장)")?.score = requireNotNull(playerScoreValue)
+        scoreObjective?.getScore("${getTeamChatColor(requireNotNull(playerTeamCount[p.uniqueId]))}${ChatColor.STRIKETHROUGH}${p.name}${ChatColor.RESET}${ChatColor.GRAY} (서버 퇴장)")?.score = requireNotNull(playerScoreValue)
 
         if (hasNetherStar[p.uniqueId] == true) {
             val dropItem = p.world.dropItem(p.location.clone().add(0.5, 1.2, 0.5), netherStarItem())
