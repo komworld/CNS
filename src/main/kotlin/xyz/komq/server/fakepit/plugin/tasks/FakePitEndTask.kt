@@ -30,15 +30,19 @@ class FakePitEndTask: Runnable {
 
     override fun run() {
         val winnerPlayer = requireNotNull(server.getPlayer(winner))
-        val playerLoc1 = winnerPlayer.location.add(5.0, 0.0, 0.0)
-        val playerLoc2 = winnerPlayer.location.add(0.0, 0.0, 5.0)
-        val playerLoc3 = winnerPlayer.location.subtract(5.0, 0.0, 0.0)
-        val playerLoc4 = winnerPlayer.location.subtract(0.0, 0.0, 5.0)
+        val loc1 = winnerPlayer.location.add(5.0, 0.0, 0.0)
+        val loc2 = winnerPlayer.location.add(0.0, 0.0, 5.0)
+        val loc3 = winnerPlayer.location.subtract(5.0, 0.0, 0.0)
+        val loc4 = winnerPlayer.location.subtract(0.0, 0.0, 5.0)
 
-        val redFireWork = FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(Color.RED).build()
-        val blueFirework = FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(Color.BLUE).build()
-        val greenFirework = FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(Color.GREEN).build()
-        val aquaFirework = FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(Color.AQUA).build()
+        val colors = arrayListOf(
+            Color.RED,
+            Color.BLUE,
+            Color.GREEN,
+            Color.AQUA
+        )
+
+        val firework = FireworkEffect.builder().with(FireworkEffect.Type.BALL).withColor(colors).build()
 
         for (onlinePlayers in server.onlinePlayers) {
             when (count++) {
@@ -58,44 +62,44 @@ class FakePitEndTask: Runnable {
                 }
 
                 20 -> {
-                    onlinePlayers.world.playFirework(playerLoc1, redFireWork)
+                    onlinePlayers.world.playFirework(loc1, firework)
                 }
                 40 -> {
-                    onlinePlayers.world.playFirework(playerLoc2, blueFirework)
+                    onlinePlayers.world.playFirework(loc2, firework)
                 }
                 60 -> {
-                    onlinePlayers.world.playFirework(playerLoc3, greenFirework)
+                    onlinePlayers.world.playFirework(loc3, firework)
                 }
                 80 -> {
-                    onlinePlayers.world.playFirework(playerLoc4, aquaFirework)
+                    onlinePlayers.world.playFirework(loc4, firework)
                 }
 
                 120 -> {
                     onlinePlayers.playSound(onlinePlayers.location, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, SoundCategory.MASTER, 1000F, 1F)
-                    onlinePlayers.world.playFirework(playerLoc1, aquaFirework)
+                    onlinePlayers.world.playFirework(loc1, firework)
                 }
                 140 -> {
-                    onlinePlayers.world.playFirework(playerLoc2, greenFirework)
+                    onlinePlayers.world.playFirework(loc2, firework)
                 }
                 160 -> {
-                    onlinePlayers.world.playFirework(playerLoc3, blueFirework)
+                    onlinePlayers.world.playFirework(loc3, firework)
                 }
                 180 -> {
-                    onlinePlayers.world.playFirework(playerLoc4, redFireWork)
+                    onlinePlayers.world.playFirework(loc4, firework)
                 }
 
                 220 -> {
                     onlinePlayers.playSound(onlinePlayers.location, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, SoundCategory.MASTER, 1000F, 1F)
-                    onlinePlayers.world.playFirework(playerLoc1, redFireWork)
+                    onlinePlayers.world.playFirework(loc1, firework)
                 }
                 240 -> {
-                    onlinePlayers.world.playFirework(playerLoc2, greenFirework)
+                    onlinePlayers.world.playFirework(loc2, firework)
                 }
                 260 -> {
-                    onlinePlayers.world.playFirework(playerLoc3, aquaFirework)
+                    onlinePlayers.world.playFirework(loc3, firework)
                 }
                 280 -> {
-                    onlinePlayers.world.playFirework(playerLoc4, blueFirework)
+                    onlinePlayers.world.playFirework(loc4, firework)
                 }
             }
         }

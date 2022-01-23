@@ -28,6 +28,7 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.initialK
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.isRunning
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playingWorld
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.sc
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.setupArmors
@@ -35,7 +36,6 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.setupSco
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.stopGame
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.teamCount
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.unbreakableMeta
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.winner
 import xyz.komq.server.fakepit.plugin.tasks.FakePitGameTask
 import xyz.komq.server.fakepit.plugin.tasks.FakePitZeroTickTask
 import java.time.Duration.ofSeconds
@@ -135,9 +135,8 @@ object FakePitKommand {
                             val randomPlayer = server.onlinePlayers.toList()[0]
 
                             netherStarOwner = randomPlayer
+                            playingWorld = randomPlayer.world
                             isRunning = true
-
-                            server.broadcast(text("Game Started."))
 
                             var count = 0
 
@@ -158,11 +157,13 @@ object FakePitKommand {
                                         server.broadcast(text("20분동안 아무도 승리 조건을 달성하지 못하여 게임이 강제 종료되었습니다!"))
                                         server.onlinePlayers.forEach {
                                             it.resetTitle()
-                                            it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("우승자: $winner"), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
+                                            it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("무승부!", NamedTextColor.YELLOW), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
                                         }
                                     }
                                 }
                             }, 0L, 20L)
+
+                            server.broadcast(text("Game Started."))
                         }
                     }
                 }

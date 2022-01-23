@@ -41,6 +41,7 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDrop
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocX
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocY
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocZ
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarItem
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.onlyOne
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeam
@@ -78,7 +79,7 @@ class FakePitEvent : Listener {
         scoreObjective?.getScore("${ChatColor.GRAY}${ChatColor.STRIKETHROUGH}${p.name}${ChatColor.RESET}${ChatColor.GRAY} (서버 퇴장)")?.score = requireNotNull(playerScoreValue)
 
         if (hasNetherStar[p.uniqueId] == true) {
-            val dropItem = p.world.dropItem(p.location.clone().add(0.5, 1.2, 0.5), ItemStack(Material.NETHER_STAR))
+            val dropItem = p.world.dropItem(p.location.clone().add(0.5, 1.2, 0.5), netherStarItem())
 
             p.isGlowing = false
             dropItem.velocity = Vector()
@@ -115,10 +116,9 @@ class FakePitEvent : Listener {
                 initialKill = 1
                 hasNetherStar[killer.uniqueId] = true
                 netherStarOwner = killer
-                killer.inventory.setItem(EquipmentSlot.OFF_HAND, ItemStack(Material.NETHER_STAR))
+                killer.inventory.setItem(EquipmentSlot.OFF_HAND, netherStarItem())
                 killer.isGlowing = true
                 server.broadcast(text("${killer.name}님이 첫 네더의 별을 소유하고 있습니다!"))
-                // TODO : LORE
             }
             else if (hasNetherStar[p.uniqueId] == true) {
                 p.isGlowing = false
@@ -126,7 +126,7 @@ class FakePitEvent : Listener {
                 hasNetherStar[p.uniqueId] = false
                 hasNetherStar[killer.uniqueId] = true
                 netherStarOwner = killer
-                killer.inventory.setItem(EquipmentSlot.OFF_HAND, ItemStack(Material.NETHER_STAR))
+                killer.inventory.setItem(EquipmentSlot.OFF_HAND, netherStarItem())
                 server.broadcast(text("${killer.name}님이 네더의 별을 소유하고 있습니다!"))
             }
         }
@@ -144,7 +144,7 @@ class FakePitEvent : Listener {
                 netherStarOwner = p
                 hasNetherStar[p.uniqueId] = true
                 item.remove()
-                p.inventory.setItemInOffHand(ItemStack(Material.NETHER_STAR))
+                p.inventory.setItemInOffHand(netherStarItem())
                 e.isCancelled = true
 
                 server.broadcast(text("${p.name}님이 네더의 별을 주우셨습니다!"))
@@ -194,24 +194,32 @@ class FakePitEvent : Listener {
         e.isCancelled = true
     }
 
+    // PREVENT BREAKING PHYSICALLY BROKEABLE STRUCTURES, SUCH AS CROPS.
     @EventHandler
     fun onBlockPhysics(e: BlockPhysicsEvent) {
         e.isCancelled = true
     }
 
     @EventHandler
-    fun onPlayerDropItem(e: PlayerDropItemEvent) {
-        e.isCancelled = true
-    }
-
-    @EventHandler
     fun onPlayerInteract(e: PlayerInteractEvent) {
-        if (e.item?.type == Material.NETHER_STAR) e.isCancelled = true
+        if (e.item?.type == Material.NETHER_STAR) {
+            e.isCancelled = true
+        }
+
         if (e.action == Action.RIGHT_CLICK_BLOCK) {
             if (Tag.BEDS.isTagged(requireNotNull(e.clickedBlock).type)) {
                 e.isCancelled = true
             }
         }
+
+        if (e.action == Action.PHYSICAL && e.material == Material.FARMLAND) {
+            e.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun onPlayerDropItem(e: PlayerDropItemEvent) {
+        e.isCancelled = true
     }
 
     @EventHandler
