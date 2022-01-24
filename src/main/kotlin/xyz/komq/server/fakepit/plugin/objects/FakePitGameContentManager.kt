@@ -19,10 +19,13 @@ import org.bukkit.inventory.PlayerInventory
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.plugin.Plugin
+import org.bukkit.scoreboard.DisplaySlot
 import org.bukkit.scoreboard.Team
 import xyz.komq.server.fakepit.plugin.FakePitPluginMain
-import xyz.komq.server.fakepit.plugin.commands.FakePitKommand.playerNameList
 import xyz.komq.server.fakepit.plugin.events.FakePitEvent
+import xyz.komq.server.fakepit.plugin.tasks.FakePitGameTask
+import xyz.komq.server.fakepit.plugin.tasks.FakePitSecondsTickTask
+import xyz.komq.server.fakepit.plugin.tasks.FakePitZeroTickTask
 import java.time.Duration.ofSeconds
 import java.util.*
 
@@ -40,7 +43,7 @@ object FakePitGameContentManager {
 
     val server = getInstance().server
 
-    var administrators = arrayListOf(
+    private var administrators = arrayListOf(
         "389c4c9b-6342-42fc-beb3-922a7d7a72f9", // komq
         "5082c832-7f7c-4b04-b0c7-2825062b7638", // BaeHyeonWoo
         "762dea11-9c45-4b18-95fc-a86aab3b39ee", // aroxu
@@ -50,8 +53,13 @@ object FakePitGameContentManager {
         "3013e38a-74a7-41d4-8e68-71ee440c0e20" // choda100x
     )
 
+    private val playerNameList = ArrayList<String>()
+    private val playerUUIDList = ArrayList<String>()
+
+    val randomPlayer: Player = server.onlinePlayers.toList()[0]
+
     var isRunning = false
-    var teamCount = 0
+    private var teamCount = 0
     var itemDrop = false
     var itemDropLocX = 0
     var itemDropLocY = 0
@@ -60,9 +68,9 @@ object FakePitGameContentManager {
     var winner = ""
     var onlyOne = false
     lateinit var netherStarOwner: Player
-    lateinit var playingWorld: World
+    private lateinit var playingWorld: World
 
-    private val playerTeam = HashMap<UUID, Team?>()
+    val playerTeam = HashMap<UUID, Team?>()
     val playerTeamCount = HashMap<UUID, Int>()
     val wasDead = HashMap<UUID, Boolean>()
     val hasNetherStar = HashMap<UUID, Boolean>()
@@ -86,7 +94,7 @@ object FakePitGameContentManager {
     private val darkAqua = sc.getTeam("DarkAqua")
     private val pink = sc.getTeam("Pink")
 
-    fun setupScoreboards() {
+    private fun setupScoreboards() {
         val point = sc.getObjective("Points")
         if (point == null) sc.registerNewObjective("Points", "dummy", text("POINTS", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
 
@@ -116,29 +124,25 @@ object FakePitGameContentManager {
         if (darkAqua == null) sc.registerNewTeam("DarkAqua")
 
         if (pink == null) sc.registerNewTeam("Pink")
+
+        sc.getTeam("Red")?.color(NamedTextColor.RED)
+        sc.getTeam("Orange")?.color(NamedTextColor.GOLD)
+        sc.getTeam("Yellow")?.color(NamedTextColor.YELLOW)
+        sc.getTeam("Green")?.color(NamedTextColor.GREEN)
+        sc.getTeam("DarkGreen")?.color(NamedTextColor.DARK_GREEN)
+        sc.getTeam("Aqua")?.color(NamedTextColor.AQUA)
+        sc.getTeam("Blue")?.color(NamedTextColor.BLUE)
+        sc.getTeam("Purple")?.color(NamedTextColor.DARK_PURPLE)
+        sc.getTeam("White")?.color(NamedTextColor.WHITE)
+        sc.getTeam("Gray")?.color(NamedTextColor.GRAY)
+        sc.getTeam("DarkAqua")?.color(NamedTextColor.DARK_AQUA)
+        sc.getTeam("Pink")?.color(NamedTextColor.LIGHT_PURPLE)
+
+        sc.getObjective("Points")?.displaySlot = DisplaySlot.SIDEBAR
+        sc.getObjective("Health")?.displaySlot = DisplaySlot.BELOW_NAME
     }
 
-    fun getTeam(teamCount: Int): Team? {
-        var team = sc.getTeam("")
-        when (teamCount) {
-            0 -> { team = sc.getTeam("Red") }
-            1 -> { team = sc.getTeam("Orange") }
-            2 -> { team = sc.getTeam("Yellow") }
-            3 -> { team = sc.getTeam("Green") }
-            4 -> { team = sc.getTeam("DarkGreen") }
-            5 -> { team = sc.getTeam("Aqua") }
-            6 -> { team = sc.getTeam("Blue") }
-            7 -> { team = sc.getTeam("Purple") }
-            8 -> { team = sc.getTeam("White") }
-            9 -> { team = sc.getTeam("Gray") }
-            10 -> { team = sc.getTeam("DarkAqua") }
-            11 -> { team = sc.getTeam("Pink") }
-        }
-
-        return team
-    }
-
-    fun addTeam(name: String, teamCount: Int) {
+    private fun addTeam(name: String, teamCount: Int) {
         val player = requireNotNull(server.getPlayer(name))
         when (teamCount) {
             0 -> { sc.getTeam("Red")?.addEntry(name); playerTeam[player.uniqueId] = sc.getTeam("Red") }
@@ -156,7 +160,7 @@ object FakePitGameContentManager {
         }
     }
 
-    fun getTeamChatColor(teamCount: Int): ChatColor {
+    fun getTeamColor(teamCount: Int): ChatColor {
         var color = ChatColor.RESET
 
         when (teamCount) {
@@ -222,6 +226,94 @@ object FakePitGameContentManager {
     fun unbreakableMeta(meta: ItemMeta): ItemMeta {
         meta.isUnbreakable = true
         return meta
+    }
+
+    fun startGame() {
+        server.onlinePlayers.forEach {
+            it.inventory.clear()
+            if (it.uniqueId.toString() in administrators.toString()) {
+                if (!getInstance().config.getBoolean("allow-admins-to-play")) {
+                    it.gameMode = GameMode.SPECTATOR
+                    it.sendMessage(text("관리자 -> GAMEMODE: SPECTATOR"))
+                }
+            }
+        }
+
+        val players = server.onlinePlayers.asSequence().filter {
+            it.gameMode != GameMode.SPECTATOR
+        }.toMutableList()
+
+        val sword = ItemStack(Material.STONE_SWORD)
+        val swordMeta = unbreakableMeta(sword.itemMeta)
+        sword.itemMeta = swordMeta
+
+        players.forEach {
+            playerNameList.add(it.name)
+            playerUUIDList.add(it.uniqueId.toString())
+            it.gameMode = GameMode.ADVENTURE
+            it.inventory.setItem(0, sword)
+        }
+
+        playerNameList.shuffle()
+        setupScoreboards()
+
+        fun teamConfiguration() {
+            val teamPlayer = requireNotNull(server.getPlayer(playerNameList[teamCount]))
+
+            addTeam(playerNameList[teamCount], teamCount)
+            setupArmors(teamCount, teamPlayer)
+            playerTeamCount[teamPlayer.uniqueId] = teamCount
+            ++teamCount
+        }
+
+        var playable = false
+
+        while (teamCount != playerNameList.size) {
+            if (server.onlinePlayers.size in 2..12) {
+                teamConfiguration()
+                playable = true
+            }
+            else if (server.onlinePlayers.size <= 13) {
+                if (administrators.toString() in playerUUIDList) {
+                    playable = true
+                }
+            }
+            else {
+                server.broadcast(text("최소/최대 플레이 가능 플레이어 수가 적거나 많습니다.", NamedTextColor.RED))
+                server.broadcast(text("몇몇 플레이어들을 관전자로 바꿔주세요. 그렇지 않으면 게임이 실행 될 수 없습니다.", NamedTextColor.RED))
+                server.broadcast(text("최소 플레이어 수: 2 / 최대 플레이어 수: 12"))
+                stopGame()
+                playable = false
+            }
+        }
+
+        if (playable) {
+            server.worlds.forEach {
+                it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
+                it.setGameRule(GameRule.KEEP_INVENTORY, true)
+                it.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false)
+            }
+
+            server.onlinePlayers.forEach {
+                it.teleport(Location(it.world, 0.5, 72.5, 0.5))
+                it.health = 20.0
+                it.foodLevel = 20
+                it.damage(0.5)
+                it.scoreboard.getObjective("Points")?.getScore(it.name)?.score = 1
+                it.scoreboard.getObjective("Points")?.getScore(it.name)?.score = 0
+            }
+
+            server.pluginManager.registerEvents(FakePitEvent(), getInstance())
+            server.scheduler.runTaskTimer(getInstance(), FakePitGameTask(), 0L, 14L)
+            server.scheduler.runTaskTimer(getInstance(), FakePitZeroTickTask(), 0L, 0L)
+            server.scheduler.runTaskTimer(getInstance(), FakePitSecondsTickTask(), 0L ,20L)
+
+            val randomPlayer = server.onlinePlayers.toList()[0]
+
+            netherStarOwner = randomPlayer
+            playingWorld = randomPlayer.world
+            isRunning = true
+        }
     }
 
     fun stopGame() {

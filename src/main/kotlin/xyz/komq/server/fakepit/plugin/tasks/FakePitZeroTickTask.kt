@@ -13,7 +13,7 @@ import org.bukkit.ChatColor
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getTeamChatColor
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getTeamColor
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.initialKill
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDrop
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocX
@@ -37,7 +37,7 @@ class FakePitZeroTickTask: Runnable {
         server.onlinePlayers.forEach {
             if (!itemDrop) {
                 if (initialKill == 1) {
-                    it.sendActionBar(text("${ChatColor.AQUA}네더의 별 소유자: ${getTeamChatColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
+                    it.sendActionBar(text("${ChatColor.AQUA}네더의 별 소유자: ${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
                 }
             }
             else {

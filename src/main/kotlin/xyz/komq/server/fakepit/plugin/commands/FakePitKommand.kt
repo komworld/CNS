@@ -10,34 +10,11 @@ import io.github.monun.kommand.getValue
 import io.github.monun.kommand.kommand
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.title.Title.Times.of
-import net.kyori.adventure.title.Title.title
-import org.bukkit.GameMode
-import org.bukkit.GameRule
-import org.bukkit.Location
-import org.bukkit.Material
-import org.bukkit.inventory.ItemStack
-import org.bukkit.scoreboard.DisplaySlot
-import xyz.komq.server.fakepit.plugin.events.FakePitEvent
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.addTeam
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.administrators
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.hasNetherStar
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.initialKill
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.isRunning
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playingWorld
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.sc
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.setupArmors
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.setupScoreboards
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.startGame
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.stopGame
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.teamCount
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.unbreakableMeta
-import xyz.komq.server.fakepit.plugin.tasks.FakePitGameTask
-import xyz.komq.server.fakepit.plugin.tasks.FakePitZeroTickTask
-import java.time.Duration.ofSeconds
 
 /***
  * @author BaeHyeonWoo
@@ -47,9 +24,6 @@ import java.time.Duration.ofSeconds
  */
 
 object FakePitKommand {
-    val playerNameList = ArrayList<String>()
-    private val playerUUIDList = ArrayList<String>()
-
     fun fakePitKommand() {
         getInstance().kommand {
             register("fakepit") {
@@ -57,133 +31,10 @@ object FakePitKommand {
                 then("start") {
                     executes {
                         if (!isRunning) {
-                            server.onlinePlayers.forEach { forEachP ->
-                                forEachP.inventory.clear()
-                                if (forEachP.uniqueId.toString() in administrators.toString()) {
-                                    if (!getInstance().config.getBoolean("allow-admins-to-play")) {
-                                        forEachP.gameMode = GameMode.SPECTATOR
-                                        forEachP.sendMessage(text("관리자 -> GAMEMODE: SPECTATOR"))
-                                    }
-                                }
-                            }
-
-                            val players = server.onlinePlayers.asSequence().filter {
-                                it.gameMode != GameMode.SPECTATOR
-                            }.toMutableList()
-
-                            val sword = ItemStack(Material.STONE_SWORD)
-                            val swordMeta = unbreakableMeta(sword.itemMeta)
-                            sword.itemMeta = swordMeta
-
-                            players.forEach {
-                                playerNameList.add(it.name)
-                                playerUUIDList.add(it.uniqueId.toString())
-                                it.gameMode = GameMode.ADVENTURE
-                                it.inventory.setItem(0, sword)
-                            }
-
-                            playerNameList.shuffle()
-                            setupScoreboards()
-
-                            sc.getTeam("Red")?.color(NamedTextColor.RED)
-                            sc.getTeam("Orange")?.color(NamedTextColor.GOLD)
-                            sc.getTeam("Yellow")?.color(NamedTextColor.YELLOW)
-                            sc.getTeam("Green")?.color(NamedTextColor.GREEN)
-                            sc.getTeam("DarkGreen")?.color(NamedTextColor.DARK_GREEN)
-                            sc.getTeam("Aqua")?.color(NamedTextColor.AQUA)
-                            sc.getTeam("Blue")?.color(NamedTextColor.BLUE)
-                            sc.getTeam("Purple")?.color(NamedTextColor.DARK_PURPLE)
-                            sc.getTeam("White")?.color(NamedTextColor.WHITE)
-                            sc.getTeam("Gray")?.color(NamedTextColor.GRAY)
-                            sc.getTeam("DarkAqua")?.color(NamedTextColor.DARK_AQUA)
-                            sc.getTeam("Pink")?.color(NamedTextColor.LIGHT_PURPLE)
-
-                            sc.getObjective("Points")?.displaySlot = DisplaySlot.SIDEBAR
-                            sc.getObjective("Health")?.displaySlot = DisplaySlot.BELOW_NAME
-
-                            fun teamConfiguration() {
-                                val teamPlayer = requireNotNull(server.getPlayer(playerNameList[teamCount]))
-
-                                addTeam(playerNameList[teamCount], teamCount)
-                                setupArmors(teamCount, teamPlayer)
-                                playerTeamCount[teamPlayer.uniqueId] = teamCount
-                                ++teamCount
-                            }
-
-                            var playable = false
-
-                            while (teamCount != playerNameList.size) {
-                                if (server.onlinePlayers.size in 2..12) {
-                                    teamConfiguration()
-                                    playable = true
-                                }
-                                else if (server.onlinePlayers.size <= 13) {
-                                    if (administrators.toString() in playerUUIDList) {
-                                        playable = true
-                                    }
-                                }
-                                else {
-                                    server.broadcast(text("최대/최소 플레이 가능 플레이어 수가 적거나 많습니다.", NamedTextColor.RED))
-                                    server.broadcast(text("몇몇 플레이어들을 관전자로 바꿔주세요. 그렇지 않으면 게임이 실행 될 수 없습니다.", NamedTextColor.RED))
-                                    server.broadcast(text("최소 플레이어 수: 2 / 최대 플레이어 수: 12"))
-                                    stopGame()
-                                    playable = false
-                                }
-                            }
-
-                            if (playable) {
-                                server.worlds.forEach {
-                                    it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
-                                    it.setGameRule(GameRule.KEEP_INVENTORY, true)
-                                    it.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false)
-                                }
-
-                                server.onlinePlayers.forEach {
-                                    it.teleport(Location(it.world, 0.5, 72.5, 0.5))
-                                    it.health = 20.0
-                                    it.foodLevel = 20
-                                    it.damage(0.5)
-                                    it.scoreboard.getObjective("Points")?.getScore(it.name)?.score = 1
-                                    it.scoreboard.getObjective("Points")?.getScore(it.name)?.score = 0
-                                }
-
-                                server.pluginManager.registerEvents(FakePitEvent(), getInstance())
-                                server.scheduler.runTaskTimer(getInstance(), FakePitGameTask(), 0L, 14L)
-                                server.scheduler.runTaskTimer(getInstance(), FakePitZeroTickTask(), 0L, 0L)
-
-                                val randomPlayer = server.onlinePlayers.toList()[0]
-
-                                netherStarOwner = randomPlayer
-                                playingWorld = randomPlayer.world
-                                isRunning = true
-
-                                var count = 0
-
-                                server.scheduler.runTaskTimer(getInstance(), Runnable {
-                                    when (count++) {
-                                        60 -> {
-                                            if (initialKill == 0) {
-                                                initialKill = 1
-                                                randomPlayer.inventory.setItemInOffHand(ItemStack(Material.NETHER_STAR))
-                                                randomPlayer.isGlowing = true
-                                                hasNetherStar[randomPlayer.uniqueId] = true
-                                                server.broadcast(text("1분동안 아무도 죽이지 않아 랜덤으로 네더의 별이 지급되었습니다!"))
-                                                server.broadcast(text("${randomPlayer.name}님이 첫 네더의 별을 소유하고 있습니다!"))
-                                            }
-                                        }
-                                        1200 -> {
-                                            stopGame()
-                                            server.broadcast(text("20분동안 아무도 승리 조건을 달성하지 못하여 게임이 강제 종료되었습니다!"))
-                                            server.onlinePlayers.forEach {
-                                                it.resetTitle()
-                                                it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("무승부!", NamedTextColor.YELLOW), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
-                                            }
-                                        }
-                                    }
-                                }, 0L, 20L)
-
-                                server.broadcast(text("Game Started."))
-                            }
+                            startGame()
+                            server.broadcast(text("Game Started."))
+                        } else {
+                            sender.sendMessage(text("The game is not running.", NamedTextColor.RED))
                         }
                     }
                 }
