@@ -6,10 +6,14 @@
 
 package xyz.komq.server.fakepit.plugin.tasks
 
+import org.bukkit.ChatColor
 import org.bukkit.Sound
 import org.bukkit.SoundCategory
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getTeamColor
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.hasNetherStar
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.isRunning
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
 
 /***
@@ -24,8 +28,8 @@ class FakePitGameTask: Runnable {
         server.onlinePlayers.forEach {
             if (isRunning) {
                 if (hasNetherStar[it.uniqueId] == true) {
-                    val scoreObjective = requireNotNull(it.scoreboard.getObjective("Points"))
-                    scoreObjective.getScore(it.name).score = scoreObjective.getScore(it.name).score + 1
+                    val points = requireNotNull(it.scoreboard.getObjective("Points"))
+                    points.getScore(it.name).score = points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}").score + 1
                     it.playSound(it.location, Sound.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, 1000F, 2F)
                 }
             }
