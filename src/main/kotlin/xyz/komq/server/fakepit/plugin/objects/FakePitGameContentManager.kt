@@ -274,7 +274,7 @@ object FakePitGameContentManager {
                 playable = true
             }
             else if (server.onlinePlayers.size <= 13) {
-                if (administrators.toString() in playerUUIDList) {
+                if (administrators.toString() in playerUUIDList.toString()) {
                     playable = true
                 }
             }
