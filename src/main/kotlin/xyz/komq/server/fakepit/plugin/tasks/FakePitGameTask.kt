@@ -29,7 +29,7 @@ class FakePitGameTask: Runnable {
             if (isRunning) {
                 if (hasNetherStar[it.uniqueId] == true) {
                     val points = requireNotNull(it.scoreboard.getObjective("Points"))
-                    points.getScore(it.name).score = points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}").score + 1
+                    points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}").score = points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}").score + 1
                     it.playSound(it.location, Sound.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, 1000F, 2F)
                 }
             }

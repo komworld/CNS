@@ -12,6 +12,7 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.hasNethe
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.initialKill
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.randomPlayer
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.sc
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.stopGame
 import java.time.Duration.ofSeconds
@@ -24,11 +25,16 @@ class FakePitSecondsTickTask: Runnable {
             60 -> {
                 if (initialKill == 0) {
                     initialKill = 1
+
+                    randomPlayer = server.onlinePlayers.toList()[0]
+
                     randomPlayer.inventory.setItemInOffHand(ItemStack(Material.NETHER_STAR))
                     randomPlayer.isGlowing = true
                     hasNetherStar[randomPlayer.uniqueId] = true
+
+                    sc.resetScores("${getTeamColor(requireNotNull(playerTeamCount[randomPlayer.uniqueId]))}${randomPlayer.name}")
                     server.broadcast(text("1분동안 아무도 죽이지 않아 랜덤으로 네더의 별이 지급되었습니다!"))
-                    server.broadcast(text("${getTeamColor(requireNotNull(playerTeamCount[randomPlayer.uniqueId]))}}${ChatColor.BOLD}${randomPlayer.name}${ChatColor.RESET}님이 첫 네더의 별을 소유하고 있습니다!"))
+                    server.broadcast(text("${getTeamColor(requireNotNull(playerTeamCount[randomPlayer.uniqueId]))}${ChatColor.BOLD}${randomPlayer.name}${ChatColor.RESET}님이 첫 네더의 별을 소유하고 있습니다!"))
                 }
             }
             1200 -> {

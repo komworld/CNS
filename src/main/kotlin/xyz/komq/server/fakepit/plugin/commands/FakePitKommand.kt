@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.isRunning
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playable
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.startGame
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.stopGame
@@ -32,7 +33,9 @@ object FakePitKommand {
                     executes {
                         if (!isRunning) {
                             startGame()
-                            server.broadcast(text("Game Started."))
+                            if (playable) {
+                                server.broadcast(text("Game Started."))
+                            }
                         } else {
                             sender.sendMessage(text("The game is not running.", NamedTextColor.RED))
                         }

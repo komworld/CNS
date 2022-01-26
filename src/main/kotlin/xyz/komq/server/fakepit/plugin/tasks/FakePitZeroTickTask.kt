@@ -21,6 +21,7 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDrop
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocZ
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.sc
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.stopGame
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.winner
@@ -34,20 +35,22 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.winner
 
 class FakePitZeroTickTask: Runnable {
     override fun run() {
+        val points = requireNotNull(sc.getObjective("Points"))
+
         server.onlinePlayers.forEach {
             if (!itemDrop) {
                 if (initialKill == 1) {
-                    it.sendActionBar(text("${ChatColor.AQUA}네더의 별 소유자: ${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
+                    it.sendActionBar(text("${ChatColor.AQUA}네더의 별 소유자: ${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
                 }
             }
             else {
                 it.sendActionBar(text("네더의 별 좌표 | X: ${itemDropLocX}, Y: ${itemDropLocY}, Z: $itemDropLocZ"))
             }
 
-            if (it.scoreboard.getObjective("Points")?.getScore(it.name)?.score == 100) {
+            if (points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}").score == 100) {
                 stopGame()
                 server.scheduler.runTaskTimer(getInstance(), FakePitEndTask(), 0L, 0L)
-                winner = it.name
+                winner = netherStarOwner
                 server.scheduler.runTaskLater(getInstance(), Runnable { server.scheduler.cancelTasks(getInstance()); server.scheduler.runTaskTimer(getInstance(), FakePitConfigReloadTask(), 0L, 20L) }, 20 * 15L)
             }
 

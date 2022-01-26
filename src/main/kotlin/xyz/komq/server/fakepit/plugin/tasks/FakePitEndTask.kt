@@ -25,20 +25,18 @@ class FakePitEndTask: Runnable {
     private var count = 0
 
     override fun run() {
-        val winnerPlayer = requireNotNull(server.getPlayer(winner))
-        val loc1 = Location(winnerPlayer.world, 25.0, 82.0, 15.0)
-        val loc2 = Location(winnerPlayer.world, 13.0, 82.0, 23.0)
-        val loc3 = Location(winnerPlayer.world, -5.0, 82.0, 14.0)
-        val loc4 = Location(winnerPlayer.world, -17.0, 82.0, 19.0)
-        val loc5 = Location(winnerPlayer.world, -17.0, 82.0, 2.0)
-        val loc6 = Location(winnerPlayer.world, -18.0, 82.0, -15.0)
-        val loc7 = Location(winnerPlayer.world, 3.0, 82.0, -18.0)
-        val loc8 = Location(winnerPlayer.world, 20.0, 82.0, -19.0)
-        val loc9 = Location(winnerPlayer.world, 25.0, 82.0, -1.0)
-        val loc10 = Location(winnerPlayer.world, 1.0, 82.0, -1.0)
-        val loc11 = Location(winnerPlayer.world, -8.0, 82.0, 12.0)
-        val loc12 = Location(winnerPlayer.world, 9.0, 82.0, -7.0)
-
+        val loc1 = Location(winner.world, 25.0, 82.0, 15.0)
+        val loc2 = Location(winner.world, 13.0, 82.0, 23.0)
+        val loc3 = Location(winner.world, -5.0, 82.0, 14.0)
+        val loc4 = Location(winner.world, -17.0, 82.0, 19.0)
+        val loc5 = Location(winner.world, -17.0, 82.0, 2.0)
+        val loc6 = Location(winner.world, -18.0, 82.0, -15.0)
+        val loc7 = Location(winner.world, 3.0, 82.0, -18.0)
+        val loc8 = Location(winner.world, 20.0, 82.0, -19.0)
+        val loc9 = Location(winner.world, 25.0, 82.0, -1.0)
+        val loc10 = Location(winner.world, 1.0, 82.0, -1.0)
+        val loc11 = Location(winner.world, -8.0, 82.0, 12.0)
+        val loc12 = Location(winner.world, 9.0, 82.0, -7.0)
 
         val colors = arrayListOf(
             Color.RED,
@@ -51,57 +49,81 @@ class FakePitEndTask: Runnable {
 
         val firework = FireworkEffect.builder().with(FireworkEffect.Type.BALL).withColor(colors).build()
 
-        server.onlinePlayers.forEach {
-            when (count++) {
-                0 -> {
-                    if (!onlyOne) {
-                        titleFunc(false)
-                    }
-                    else {
-                        titleFunc(true)
-                    }
+        when (count++) {
+            0 -> {
+                if (!onlyOne) {
+                    titleFunc(false)
+                }
+                else {
+                    titleFunc(true)
+                }
+                server.onlinePlayers.forEach {
                     it.removePotionEffect(PotionEffectType.SATURATION)
                     it.playSound(it.location, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, SoundCategory.MASTER, 1000F, 1F)
                 }
+            }
 
-                20 -> {
+            20 -> {
+                server.onlinePlayers.forEach {
                     it.world.playFirework(loc1, firework)
                 }
-                40 -> {
+            }
+            40 -> {
+                server.onlinePlayers.forEach {
                     it.world.playFirework(loc2, firework)
                 }
-                60 -> {
+            }
+            60 -> {
+                server.onlinePlayers.forEach {
                     it.world.playFirework(loc3, firework)
                 }
-                80 -> {
+            }
+            80 -> {
+                server.onlinePlayers.forEach {
                     it.world.playFirework(loc4, firework)
                 }
+            }
 
-                120 -> {
+            120 -> {
+                server.onlinePlayers.forEach {
                     it.playSound(it.location, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, SoundCategory.MASTER, 1000F, 1F)
                     it.world.playFirework(loc5, firework)
                 }
-                140 -> {
+            }
+            140 -> {
+                server.onlinePlayers.forEach {
                     it.world.playFirework(loc6, firework)
                 }
-                160 -> {
+            }
+            160 -> {
+                server.onlinePlayers.forEach {
                     it.world.playFirework(loc7, firework)
                 }
-                180 -> {
+            }
+            180 -> {
+                server.onlinePlayers.forEach {
                     it.world.playFirework(loc8, firework)
                 }
+            }
 
-                220 -> {
+            220 -> {
+                server.onlinePlayers.forEach {
                     it.playSound(it.location, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, SoundCategory.MASTER, 1000F, 1F)
                     it.world.playFirework(loc9, firework)
                 }
-                240 -> {
+            }
+            240 -> {
+                server.onlinePlayers.forEach {
                     it.world.playFirework(loc10, firework)
                 }
-                260 -> {
+            }
+            260 -> {
+                server.onlinePlayers.forEach {
                     it.world.playFirework(loc11, firework)
                 }
-                280 -> {
+            }
+            280 -> {
+                server.onlinePlayers.forEach {
                     it.world.playFirework(loc12, firework)
                 }
             }

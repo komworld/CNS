@@ -92,14 +92,13 @@ class FakePitEvent : Listener {
     fun onPlayerQuit(e: PlayerQuitEvent) {
         val p = e.player
         val playerTeam = requireNotNull(playerTeam[p.uniqueId])
-        val scoreObjective = sc.getObjective("Points")
-        val playerScoreValue = scoreObjective?.getScore(p.name)?.score
+        val scoreObjective = requireNotNull(sc.getObjective("Points"))
+        val playerScoreValue = scoreObjective.getScore("${getTeamColor(requireNotNull(playerTeamCount[p.uniqueId]))}${p.name}").score
+        val playerBoldScoreValue = scoreObjective.getScore("${getTeamColor(requireNotNull(playerTeamCount[p.uniqueId]))}${ChatColor.BOLD}${p.name}").score
 
         quitArray.add(p.uniqueId)
         p.inventory.clear()
         playerTeam.unregister()
-        sc.resetScores(p.name)
-        scoreObjective?.getScore("${getTeamColor(requireNotNull(playerTeamCount[p.uniqueId]))}${ChatColor.STRIKETHROUGH}${p.name}${ChatColor.RESET}${ChatColor.GRAY} (서버 퇴장)")?.score = requireNotNull(playerScoreValue)
 
         if (hasNetherStar[p.uniqueId] == true) {
             val dropItem = p.world.dropItem(p.location.clone().add(0.5, 1.2, 0.5), netherStarItem())
@@ -114,6 +113,13 @@ class FakePitEvent : Listener {
             itemDropLocZ = p.location.z.toInt()
 
             hasNetherStar[p.uniqueId] = false
+
+            scoreObjective.getScore("${getTeamColor(requireNotNull(playerTeamCount[p.uniqueId]))}${ChatColor.STRIKETHROUGH}${p.name}${ChatColor.RESET}${ChatColor.GRAY} (서버 퇴장)").score = playerBoldScoreValue
+            sc.resetScores("${getTeamColor(requireNotNull(playerTeamCount[p.uniqueId]))}${ChatColor.BOLD}${p.name}")
+        }
+        else {
+            scoreObjective.getScore("${getTeamColor(requireNotNull(playerTeamCount[p.uniqueId]))}${ChatColor.STRIKETHROUGH}${p.name}${ChatColor.RESET}${ChatColor.GRAY} (서버 퇴장)").score = playerScoreValue
+            sc.resetScores("${getTeamColor(requireNotNull(playerTeamCount[p.uniqueId]))}${p.name}")
         }
 
         server.scheduler.runTaskLater(getInstance(), Runnable {
@@ -122,7 +128,7 @@ class FakePitEvent : Listener {
                 server.onlinePlayers.forEach {
                     server.scheduler.runTaskTimer(getInstance(), FakePitEndTask(), 0L, 20L)
                     onlyOne = true
-                    winner = it.name
+                    winner = it
                     server.scheduler.runTaskLater(getInstance(), Runnable { server.scheduler.cancelTasks(getInstance()); server.scheduler.runTaskTimer(getInstance(), FakePitConfigReloadTask(), 0L, 20L) }, 20 * 8L)
                 }
             }
@@ -134,27 +140,34 @@ class FakePitEvent : Listener {
         val p = e.player
         val killer = e.player.killer
         val points = requireNotNull(sc.getObjective("Points"))
-        val originalPoints = points.getScore(p.name).score
 
         if (killer is Player) {
             if (initialKill == 0) {
                 initialKill = 1
                 hasNetherStar[killer.uniqueId] = true
                 netherStarOwner = killer
-                sc.resetScores(killer.name)
-                points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${killer.name}").score = originalPoints
+
+                points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}").score = points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}").score
+                sc.resetScores("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}")
+
                 killer.inventory.setItem(EquipmentSlot.OFF_HAND, netherStarItem())
                 killer.isGlowing = true
-                server.broadcast(text("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${killer.name}${ChatColor.RESET}님이 첫 네더의 별을 소유하고 있습니다!"))
+                server.broadcast(text("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}${ChatColor.RESET}님이 첫 네더의 별을 소유하고 있습니다!"))
             }
             else if (hasNetherStar[p.uniqueId] == true) {
                 p.isGlowing = false
                 killer.isGlowing = true
                 hasNetherStar[p.uniqueId] = false
                 hasNetherStar[killer.uniqueId] = true
+
+                points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}").score = points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}").score
+                sc.resetScores("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}")
+
                 netherStarOwner = killer
-                sc.resetScores(killer.name)
-                points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${killer.name}").score = originalPoints
+
+                points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}").score = points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}").score
+                sc.resetScores("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}")
+
                 killer.inventory.setItem(EquipmentSlot.OFF_HAND, netherStarItem())
                 server.broadcast(text("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${killer.name}${ChatColor.RESET}님이 네더의 별을 소유하고 있습니다!"))
             }
@@ -166,6 +179,7 @@ class FakePitEvent : Listener {
     fun onPlayerAttemptPickupItem(e: PlayerAttemptPickupItemEvent) {
         val p = e.player
         val item = e.item
+        val points = requireNotNull(sc.getObjective("Points"))
 
         if (item.itemStack.type == Material.NETHER_STAR) {
             if (itemDrop) {
@@ -175,6 +189,9 @@ class FakePitEvent : Listener {
                 item.remove()
                 p.inventory.setItemInOffHand(netherStarItem())
                 e.isCancelled = true
+
+                points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}").score = points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}").score
+                sc.resetScores("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${netherStarOwner.name}")
 
                 server.broadcast(text("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${p.name}${ChatColor.RESET}님이 네더의 별을 주우셨습니다!"))
             }

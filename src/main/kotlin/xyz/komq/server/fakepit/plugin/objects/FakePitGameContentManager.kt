@@ -57,14 +57,15 @@ object FakePitGameContentManager {
 
     lateinit var randomPlayer: Player
 
-    var isRunning = false
     private var teamCount = 0
+    var isRunning = false
+    var playable = false
     var itemDrop = false
     var itemDropLocX = 0
     var itemDropLocY = 0
     var itemDropLocZ = 0
     var initialKill = 0
-    var winner = ""
+    lateinit var winner: Player
     var onlyOne = false
     lateinit var netherStarOwner: Player
     private lateinit var playingWorld: World
@@ -246,14 +247,20 @@ object FakePitGameContentManager {
         val swordMeta = unbreakableMeta(sword.itemMeta)
         sword.itemMeta = swordMeta
 
+        setupScoreboards()
+
         players.forEach {
             playerNameList.add(it.name)
             it.gameMode = GameMode.ADVENTURE
             it.inventory.setItem(0, sword)
+
+            server.scheduler.runTaskLater(getInstance(), Runnable {
+                sc.getObjective("Points")?.getScore("${getTeamColor(requireNotNull(playerTeamCount[it.uniqueId]))}${it.name}")?.score = 1
+                sc.getObjective("Points")?.getScore("${getTeamColor(requireNotNull(playerTeamCount[it.uniqueId]))}${it.name}")?.score = 0
+            }, 4L)
         }
 
         playerNameList.shuffle()
-        setupScoreboards()
 
         fun teamConfiguration() {
             val teamPlayer = requireNotNull(server.getPlayer(playerNameList[teamCount]))
@@ -264,18 +271,18 @@ object FakePitGameContentManager {
             ++teamCount
         }
 
-        var playable = false
-
-        while (teamCount != playerNameList.size) {
-            playable = if (server.onlinePlayers.size in 2..12) {
+        while (teamCount < playerNameList.size) {
+            if (playerNameList.size in 2..12) {
                 teamConfiguration()
-                true
-            } else {
+                playable = true
+            }
+            else {
                 server.broadcast(text("최소/최대 플레이 가능 플레이어 수가 적거나 많습니다.", NamedTextColor.RED))
-                server.broadcast(text("몇몇 플레이어들을 관전자로 바꿔주세요. 그렇지 않으면 게임이 실행 될 수 없습니다.", NamedTextColor.RED))
-                server.broadcast(text("최소 플레이어 수: 2 / 최대 플레이어 수: 12"))
+                server.broadcast(text("플레이어들을 관전자로 바꿔주세요. 그렇지 않으면 게임이 실행 할 수 없습니다.", NamedTextColor.RED))
+                server.broadcast(text("최소 플레이어 수: 2 / 최대 플레이어 수: 12", NamedTextColor.RED))
                 stopGame()
-                false
+                playable = false
+                break
             }
         }
 
@@ -287,12 +294,10 @@ object FakePitGameContentManager {
             }
 
             server.onlinePlayers.forEach {
-                it.teleport(Location(it.world, 0.5, 72.5, 0.5))
+                it.teleport(Location(it.world, 0.5, 71.0, 0.5))
                 it.health = 20.0
                 it.foodLevel = 20
                 it.damage(0.5)
-                it.scoreboard.getObjective("Points")?.getScore(it.name)?.score = 1
-                it.scoreboard.getObjective("Points")?.getScore(it.name)?.score = 0
             }
 
             server.pluginManager.registerEvents(FakePitEvent(), getInstance())
@@ -332,7 +337,7 @@ object FakePitGameContentManager {
         server.onlinePlayers.forEach {
             if (!OnlyOne) {
                 it.resetTitle()
-                it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("우승자: $winner", NamedTextColor.YELLOW), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
+                it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("우승자: ${winner.name}", NamedTextColor.YELLOW), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
             } else {
                 it.resetTitle()
                 it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("모든 사람들이 나갔습니다!", NamedTextColor.YELLOW), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
