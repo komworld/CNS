@@ -35,8 +35,6 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.winner
 
 class FakePitZeroTickTask: Runnable {
     override fun run() {
-        val points = requireNotNull(sc.getObjective("Points"))
-
         server.onlinePlayers.forEach {
             if (!itemDrop) {
                 if (initialKill == 1) {
@@ -47,7 +45,7 @@ class FakePitZeroTickTask: Runnable {
                 it.sendActionBar(text("네더의 별 좌표 | X: ${itemDropLocX}, Y: ${itemDropLocY}, Z: $itemDropLocZ"))
             }
 
-            if (points.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}").score == 100) {
+            if (sc.getObjective("Points")?.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}")?.score == 100) {
                 stopGame()
                 server.scheduler.runTaskTimer(getInstance(), FakePitEndTask(), 0L, 0L)
                 winner = netherStarOwner
