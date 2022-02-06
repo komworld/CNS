@@ -12,7 +12,6 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.ChatColor
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getTeamColor
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.initialKill
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDrop
@@ -21,6 +20,7 @@ import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDrop
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.itemDropLocZ
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.plugin
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.sc
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.server
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.stopGame
@@ -47,9 +47,8 @@ class FakePitZeroTickTask: Runnable {
 
             if (sc.getObjective("Points")?.getScore("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${netherStarOwner.name}")?.score == 100) {
                 stopGame()
-                server.scheduler.runTaskTimer(getInstance(), FakePitEndTask(), 0L, 0L)
+                server.scheduler.runTaskTimer(plugin, FakePitEndTask(), 0L, 0L)
                 winner = netherStarOwner
-                server.scheduler.runTaskLater(getInstance(), Runnable { server.scheduler.cancelTasks(getInstance()); server.scheduler.runTaskTimer(getInstance(), FakePitConfigReloadTask(), 0L, 20L) }, 20 * 15L)
             }
 
             it.addPotionEffect(PotionEffect(PotionEffectType.SATURATION, 1000000, 255, false, false, false))

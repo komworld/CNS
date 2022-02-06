@@ -6,7 +6,7 @@
 
 package xyz.komq.server.fakepit.plugin.tasks
 
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getInstance
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.plugin
 import java.io.File
 
 /***
@@ -17,15 +17,15 @@ import java.io.File
  */
 
 class FakePitConfigReloadTask: Runnable {
-    private val configFile = File(getInstance().dataFolder, "config.yml")
+    private val configFile = File(plugin.dataFolder, "config.yml")
 
     private var configFileLastModified = configFile.lastModified()
 
     override fun run() {
         if (configFileLastModified != configFile.lastModified()) {
-            getInstance().logger.info("Config Reloaded.")
-            getInstance().reloadConfig()
-            getInstance().saveConfig()
+            plugin.logger.info("Config Reloaded.")
+            plugin.reloadConfig()
+            plugin.saveConfig()
 
             configFileLastModified = configFile.lastModified()
         }

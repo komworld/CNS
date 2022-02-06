@@ -5,11 +5,13 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title.Times.of
 import net.kyori.adventure.title.Title.title
 import org.bukkit.ChatColor
+import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.getTeamColor
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.hasNetherStar
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.initialKill
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.netherStarOwner
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.playerTeamCount
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.randomPlayer
 import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.sc
@@ -26,15 +28,16 @@ class FakePitSecondsTickTask: Runnable {
                 if (initialKill == 0) {
                     initialKill = 1
 
-                    randomPlayer = server.onlinePlayers.toList()[0]
+                    randomPlayer = server.onlinePlayers.filter { it.gameMode != GameMode.SPECTATOR }.toList()[0]
 
                     randomPlayer.inventory.setItemInOffHand(ItemStack(Material.NETHER_STAR))
                     randomPlayer.isGlowing = true
+                    netherStarOwner = randomPlayer
                     hasNetherStar[randomPlayer.uniqueId] = true
 
-                    sc.resetScores("${getTeamColor(requireNotNull(playerTeamCount[randomPlayer.uniqueId]))}${randomPlayer.name}")
+                    sc.resetScores("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${randomPlayer.name}")
                     server.broadcast(text("1분동안 아무도 죽이지 않아 랜덤으로 네더의 별이 지급되었습니다!"))
-                    server.broadcast(text("${getTeamColor(requireNotNull(playerTeamCount[randomPlayer.uniqueId]))}${ChatColor.BOLD}${randomPlayer.name}${ChatColor.RESET}님이 첫 네더의 별을 소유하고 있습니다!"))
+                    server.broadcast(text("${getTeamColor(requireNotNull(playerTeamCount[netherStarOwner.uniqueId]))}${ChatColor.BOLD}${randomPlayer.name}${ChatColor.RESET}님이 첫 네더의 별을 소유하고 있습니다!"))
                 }
             }
             1200 -> {

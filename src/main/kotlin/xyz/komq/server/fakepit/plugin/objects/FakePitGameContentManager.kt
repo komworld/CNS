@@ -6,19 +6,18 @@
 
 package xyz.komq.server.fakepit.plugin.objects
 
+import com.google.common.io.ByteStreams
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
-import net.kyori.adventure.title.Title.Times.of
-import net.kyori.adventure.title.Title.title
 import org.bukkit.*
 import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
+import org.bukkit.event.Listener
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.PlayerInventory
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.inventory.meta.LeatherArmorMeta
-import org.bukkit.plugin.Plugin
 import org.bukkit.scoreboard.DisplaySlot
 import org.bukkit.scoreboard.Team
 import xyz.komq.server.fakepit.plugin.FakePitPluginMain
@@ -26,7 +25,6 @@ import xyz.komq.server.fakepit.plugin.events.FakePitEvent
 import xyz.komq.server.fakepit.plugin.tasks.FakePitGameTask
 import xyz.komq.server.fakepit.plugin.tasks.FakePitSecondsTickTask
 import xyz.komq.server.fakepit.plugin.tasks.FakePitZeroTickTask
-import java.time.Duration.ofSeconds
 import java.util.*
 
 /***
@@ -37,12 +35,21 @@ import java.util.*
  */
 
 object FakePitGameContentManager {
-    fun getInstance(): Plugin {
-        return FakePitPluginMain.instance
+    val plugin = FakePitPluginMain.instance
+
+    val server = plugin.server
+    lateinit var event: Listener
+
+    val world = requireNotNull(server.getWorld("World"))
+
+    fun Player.sendTo(serverName : String) {
+        @Suppress("UnstableApiUsage")
+        val out = ByteStreams.newDataOutput()
+        out.writeUTF("Connect")
+        out.writeUTF(serverName)
+        sendPluginMessage(plugin, "BungeeCord", out.toByteArray())
     }
-
-    val server = getInstance().server
-
+    
     private var administrators = arrayListOf(
         "389c4c9b-6342-42fc-beb3-922a7d7a72f9", // komq
         "5082c832-7f7c-4b04-b0c7-2825062b7638", // BaeHyeonWoo
@@ -54,27 +61,27 @@ object FakePitGameContentManager {
     )
 
     private val playerNameList = ArrayList<String>()
-
-    lateinit var randomPlayer: Player
-
     private var teamCount = 0
+
     var isRunning = false
-    var playable = false
+    var playable = true
+
     var itemDrop = false
     var itemDropLocX = 0
     var itemDropLocY = 0
     var itemDropLocZ = 0
+
     var initialKill = 0
-    lateinit var winner: Player
     var onlyOne = false
+
+    lateinit var randomPlayer: Player
+    lateinit var winner: Player
     lateinit var netherStarOwner: Player
-    private lateinit var playingWorld: World
 
     val playerTeam = HashMap<UUID, Team?>()
     val playerTeamCount = HashMap<UUID, Int>()
     val wasDead = HashMap<UUID, Boolean>()
     val hasNetherStar = HashMap<UUID, Boolean>()
-    val deathLocation = HashMap<UUID, Location>()
 
     // Team Settings
 
@@ -96,50 +103,62 @@ object FakePitGameContentManager {
 
     private fun setupScoreboards() {
         val point = sc.getObjective("Points")
-        if (point == null) sc.registerNewObjective("Points", "dummy", text("POINTS", NamedTextColor.AQUA).decorate(TextDecoration.BOLD))
+        if (point == null) sc.registerNewObjective("Points", "dummy", text("별잡아라!", NamedTextColor.AQUA).decorate(TextDecoration.BOLD)).apply {
+            displaySlot = DisplaySlot.SIDEBAR
+        }
 
         val health = sc.getObjective("Health")
-        if (health == null) sc.registerNewObjective("Health", "health", text("♥", NamedTextColor.RED))
+        if (health == null) sc.registerNewObjective("Health", "health", text("♥", NamedTextColor.RED)).apply {
+            displaySlot = DisplaySlot.BELOW_NAME
+        }
 
-        if (red == null) sc.registerNewTeam("Red")
+        if (red == null) sc.registerNewTeam("Red").apply {
+            color(NamedTextColor.RED)
+        }
 
-        if (orange == null) sc.registerNewTeam("Orange")
+        if (orange == null) sc.registerNewTeam("Orange").apply {
+            color(NamedTextColor.GOLD)
+        }
 
-        if (yellow == null) sc.registerNewTeam("Yellow")
+        if (yellow == null) sc.registerNewTeam("Yellow").apply {
+            color(NamedTextColor.YELLOW)
+        }
 
-        if (green == null) sc.registerNewTeam("Green")
+        if (green == null) sc.registerNewTeam("Green").apply {
+            color(NamedTextColor.GREEN)
+        }
 
-        if (darkGreen == null) sc.registerNewTeam("DarkGreen")
+        if (darkGreen == null) sc.registerNewTeam("DarkGreen").apply {
+            color(NamedTextColor.DARK_GREEN)
+        }
 
-        if (aqua == null) sc.registerNewTeam("Aqua")
+        if (aqua == null) sc.registerNewTeam("Aqua").apply {
+            color(NamedTextColor.AQUA)
+        }
 
-        if (blue == null) sc.registerNewTeam("Blue")
+        if (blue == null) sc.registerNewTeam("Blue").apply {
+            color(NamedTextColor.BLUE)
+        }
 
-        if (purple == null) sc.registerNewTeam("Purple")
+        if (purple == null) sc.registerNewTeam("Purple").apply {
+            color(NamedTextColor.DARK_PURPLE)
+        }
 
-        if (white == null) sc.registerNewTeam("White")
+        if (white == null) sc.registerNewTeam("White").apply {
+            color(NamedTextColor.WHITE)
+        }
 
-        if (gray == null) sc.registerNewTeam("Gray")
+        if (gray == null) sc.registerNewTeam("Gray").apply {
+            color(NamedTextColor.GRAY)
+        }
 
-        if (darkAqua == null) sc.registerNewTeam("DarkAqua")
+        if (darkAqua == null) sc.registerNewTeam("DarkAqua").apply {
+            color(NamedTextColor.DARK_AQUA)
+        }
 
-        if (pink == null) sc.registerNewTeam("Pink")
-
-        sc.getTeam("Red")?.color(NamedTextColor.RED)
-        sc.getTeam("Orange")?.color(NamedTextColor.GOLD)
-        sc.getTeam("Yellow")?.color(NamedTextColor.YELLOW)
-        sc.getTeam("Green")?.color(NamedTextColor.GREEN)
-        sc.getTeam("DarkGreen")?.color(NamedTextColor.DARK_GREEN)
-        sc.getTeam("Aqua")?.color(NamedTextColor.AQUA)
-        sc.getTeam("Blue")?.color(NamedTextColor.BLUE)
-        sc.getTeam("Purple")?.color(NamedTextColor.DARK_PURPLE)
-        sc.getTeam("White")?.color(NamedTextColor.WHITE)
-        sc.getTeam("Gray")?.color(NamedTextColor.GRAY)
-        sc.getTeam("DarkAqua")?.color(NamedTextColor.DARK_AQUA)
-        sc.getTeam("Pink")?.color(NamedTextColor.LIGHT_PURPLE)
-
-        sc.getObjective("Points")?.displaySlot = DisplaySlot.SIDEBAR
-        sc.getObjective("Health")?.displaySlot = DisplaySlot.BELOW_NAME
+        if (pink == null) sc.registerNewTeam("Pink").apply {
+            color(NamedTextColor.LIGHT_PURPLE)
+        }
     }
 
     private fun addTeam(name: String, teamCount: Int) {
@@ -181,49 +200,49 @@ object FakePitGameContentManager {
         return color
     }
 
-    fun setupArmors(teamCount: Int, player: Player) {
+    private fun setupArmors(teamCount: Int, player: Player) {
         val inventory = player.inventory
         when (teamCount) {
             0 -> {
-                equipArmor(inventory, Color.RED)
+                equipArmor(inventory, Color.fromRGB(255, 85, 85))
             }
             1 -> {
-                equipArmor(inventory, Color.ORANGE)
+                equipArmor(inventory, Color.fromRGB(255, 170, 0))
             }
             2 -> {
-                equipArmor(inventory, Color.YELLOW)
+                equipArmor(inventory, Color.fromRGB(255, 255, 85))
             }
             3 -> {
-                equipArmor(inventory, Color.LIME)
+                equipArmor(inventory, Color.fromRGB(85, 255, 85))
             }
             4 -> {
-                equipArmor(inventory, Color.GREEN)
+                equipArmor(inventory, Color.fromRGB(0, 170, 0))
             }
             5 -> {
-                equipArmor(inventory, Color.AQUA)
+                equipArmor(inventory, Color.fromRGB(85, 255, 255))
             }
             6 -> {
-                equipArmor(inventory, Color.BLUE)
+                equipArmor(inventory, Color.fromRGB(85, 85, 255))
             }
             7 -> {
-                equipArmor(inventory, Color.PURPLE)
+                equipArmor(inventory, Color.fromRGB(170, 0, 170))
             }
             8 -> {
-                equipArmor(inventory, Color.WHITE)
+                equipArmor(inventory, Color.fromRGB(255, 255, 255))
             }
             9 -> {
-                equipArmor(inventory, Color.GRAY)
+                equipArmor(inventory, Color.fromRGB(170, 170, 170))
             }
             10 -> {
-                equipArmor(inventory, Color.SILVER)
+                equipArmor(inventory, Color.fromRGB(0, 170, 170))
             }
             11 -> {
-                equipArmor(inventory, Color.FUCHSIA)
+                equipArmor(inventory, Color.fromRGB(255, 85, 255))
             }
         }
     }
 
-    fun unbreakableMeta(meta: ItemMeta): ItemMeta {
+    private fun unbreakableMeta(meta: ItemMeta): ItemMeta {
         meta.isUnbreakable = true
         return meta
     }
@@ -231,8 +250,8 @@ object FakePitGameContentManager {
     fun startGame() {
         server.onlinePlayers.forEach {
             it.inventory.clear()
-            if (it.uniqueId.toString() in administrators.toString()) {
-                if (!getInstance().config.getBoolean("allow-admins-to-play")) {
+            if (administrators.toString().contains(it.uniqueId.toString())) {
+                if (!plugin.config.getBoolean("allow-admins-to-play")) {
                     it.gameMode = GameMode.SPECTATOR
                     it.sendMessage(text("관리자 -> GAMEMODE: SPECTATOR"))
                 }
@@ -254,10 +273,10 @@ object FakePitGameContentManager {
             it.gameMode = GameMode.ADVENTURE
             it.inventory.setItem(0, sword)
 
-            server.scheduler.runTaskLater(getInstance(), Runnable {
+            server.scheduler.runTaskLater(plugin, Runnable {
                 sc.getObjective("Points")?.getScore("${getTeamColor(requireNotNull(playerTeamCount[it.uniqueId]))}${it.name}")?.score = 1
                 sc.getObjective("Points")?.getScore("${getTeamColor(requireNotNull(playerTeamCount[it.uniqueId]))}${it.name}")?.score = 0
-            }, 4L)
+            }, 2L)
         }
 
         playerNameList.shuffle()
@@ -274,7 +293,6 @@ object FakePitGameContentManager {
         while (teamCount < playerNameList.size) {
             if (playerNameList.size in 2..12) {
                 teamConfiguration()
-                playable = true
             }
             else {
                 server.broadcast(text("최소/최대 플레이 가능 플레이어 수가 적거나 많습니다.", NamedTextColor.RED))
@@ -300,29 +318,29 @@ object FakePitGameContentManager {
                 it.damage(0.5)
             }
 
-            server.pluginManager.registerEvents(FakePitEvent(), getInstance())
-            server.scheduler.runTaskTimer(getInstance(), FakePitGameTask(), 0L, 14L)
-            server.scheduler.runTaskTimer(getInstance(), FakePitZeroTickTask(), 0L, 0L)
-            server.scheduler.runTaskTimer(getInstance(), FakePitSecondsTickTask(), 0L ,20L)
+            server.pluginManager.registerEvents(event, plugin)
+            server.scheduler.runTaskTimer(plugin, FakePitGameTask(), 0L, 14L)
+            server.scheduler.runTaskTimer(plugin, FakePitZeroTickTask(), 0L, 0L)
+            server.scheduler.runTaskTimer(plugin, FakePitSecondsTickTask(), 0L ,20L)
 
             val randomPlayer = server.onlinePlayers.toList()[0]
-
             netherStarOwner = randomPlayer
-            playingWorld = randomPlayer.world
+            world.pvp = true
             isRunning = true
         }
     }
 
     fun stopGame() {
-        HandlerList.unregisterAll(getInstance())
-        server.scheduler.cancelTasks(getInstance())
+        world.pvp = false
+        HandlerList.unregisterAll(event)
+        server.scheduler.cancelTasks(plugin)
         playerNameList.clear()
         server.onlinePlayers.forEach {
             it.inventory.clear()
             sc.resetScores(it.name)
             hasNetherStar[it.uniqueId] = false
             it.isGlowing = false
-            it.gameMode = GameMode.SURVIVAL
+            it.gameMode = GameMode.ADVENTURE
         }
         FakePitEvent().quitArray.clear()
         sc.objectives.forEach { it.unregister() }
@@ -331,18 +349,6 @@ object FakePitGameContentManager {
         initialKill = 0
         itemDrop = false
         isRunning = false
-    }
-
-    fun titleFunc(OnlyOne: Boolean) {
-        server.onlinePlayers.forEach {
-            if (!OnlyOne) {
-                it.resetTitle()
-                it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("우승자: ${winner.name}", NamedTextColor.YELLOW), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
-            } else {
-                it.resetTitle()
-                it.showTitle(title(text("게임 종료!", NamedTextColor.GOLD), text("모든 사람들이 나갔습니다!", NamedTextColor.YELLOW), of(ofSeconds(0), ofSeconds(8), ofSeconds(0))))
-            }
-        }
     }
 
     private fun equipArmor(inv: PlayerInventory, color: Color) {
@@ -370,12 +376,12 @@ object FakePitGameContentManager {
 
     fun netherStarItem(): ItemStack {
         val netherStar = ItemStack(Material.NETHER_STAR, 1)
-        val netherStarMeta = netherStar.itemMeta
 
-        netherStarMeta.displayName(text("NETHER STAR", NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decorate(TextDecoration.ITALIC))
-        netherStarMeta.lore(listOf(text("소유시 0.7초마다 점수가 1점씩 오릅니다.", NamedTextColor.GRAY)))
+        netherStar.itemMeta = netherStar.itemMeta.apply {
+            displayName(text("NETHER STAR", NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decorate(TextDecoration.ITALIC))
+            lore(listOf(text("소유시 0.7초마다 점수가 1점씩 오릅니다.", NamedTextColor.GRAY)))
+        }
 
-        netherStar.itemMeta = netherStarMeta
         return netherStar
     }
 }

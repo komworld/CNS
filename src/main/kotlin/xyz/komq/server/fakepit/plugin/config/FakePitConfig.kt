@@ -21,6 +21,9 @@ object FakePitConfig {
     @Config
     var allowAdminsToPlay = false
 
+    @Config
+    var lobbyserver = "server"
+
     fun load(configFile: File) {
         ConfigSupport.compute(this, configFile)
     }

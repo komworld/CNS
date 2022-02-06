@@ -6,10 +6,14 @@
 
 package xyz.komq.server.fakepit.plugin
 
-import org.bukkit.GameRule
+import io.github.monun.kommand.kommand
+import org.bukkit.event.HandlerList
 import org.bukkit.plugin.java.JavaPlugin
-import xyz.komq.server.fakepit.plugin.commands.FakePitKommand.fakePitKommand
+import xyz.komq.server.fakepit.plugin.commands.FakePitKommand.register
 import xyz.komq.server.fakepit.plugin.config.FakePitConfig.load
+import xyz.komq.server.fakepit.plugin.events.FakePitEvent
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.event
+import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.world
 import xyz.komq.server.fakepit.plugin.tasks.FakePitConfigReloadTask
 import java.io.File
 
@@ -31,20 +35,24 @@ class FakePitPluginMain : JavaPlugin() {
 
     override fun onEnable() {
         instance = this
+        event = FakePitEvent()
+
         load(configFile)
         server.scheduler.runTaskTimer(this, FakePitConfigReloadTask(), 0L, 20L)
-        fakePitKommand()
+        server.messenger.registerOutgoingPluginChannel(this, "BungeeCord")
+        world.pvp = false
+
+        kommand {
+            register("fakepit") {
+                register(this)
+            }
+        }
     }
 
     override fun onDisable() {
-        server.onlinePlayers.forEach {
-            server.scoreboardManager.mainScoreboard.resetScores(it.name)
-        }
-        server.worlds.forEach {
-            it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, false)
-            it.setGameRule(GameRule.KEEP_INVENTORY, false)
-        }
+        HandlerList.unregisterAll(event)
         server.scoreboardManager.mainScoreboard.objectives.forEach { it.unregister() }
         server.scoreboardManager.mainScoreboard.teams.forEach { it.unregister() }
+        server.messenger.unregisterOutgoingPluginChannel(this, "BungeeCord")
     }
 }
