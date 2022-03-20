@@ -9,11 +9,13 @@ repositories {
     maven("https://papermc.io/repo/repository/maven-public/")
 }
 
+@Suppress("GradlePackageUpdate")
 dependencies {
     compileOnly(kotlin("stdlib"))
-    compileOnly("io.papermc.paper:paper-api:1.18.1-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
     compileOnly("io.github.monun:tap-api:${project.properties["tapVersion"]}")
     compileOnly("io.github.monun:kommand-api:${project.properties["kommandVersion"]}")
+    compileOnly("world.komq:parallel-universe-api:0.0.5")
 }
 
 tasks {

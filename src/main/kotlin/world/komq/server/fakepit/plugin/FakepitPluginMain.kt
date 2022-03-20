@@ -4,17 +4,19 @@
  *  Licensed under the General Public License, Version 3.0. (https://opensource.org/licenses/gpl-3.0/)
  */
 
-package xyz.komq.server.fakepit.plugin
+package world.komq.server.fakepit.plugin
 
 import io.github.monun.kommand.kommand
 import org.bukkit.event.HandlerList
 import org.bukkit.plugin.java.JavaPlugin
-import xyz.komq.server.fakepit.plugin.commands.FakePitKommand.register
-import xyz.komq.server.fakepit.plugin.config.FakePitConfig.load
-import xyz.komq.server.fakepit.plugin.events.FakePitEvent
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.event
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.world
-import xyz.komq.server.fakepit.plugin.tasks.FakePitConfigReloadTask
+import world.komq.server.fakepit.plugin.commands.FakepitKommand.register
+import world.komq.server.fakepit.plugin.config.FakepitConfig.load
+import world.komq.server.fakepit.plugin.events.FakepitEvent
+import world.komq.server.fakepit.plugin.events.FakepitMapProtectEvent
+import world.komq.server.fakepit.plugin.objects.FakepitGameContentManager.event
+import world.komq.server.fakepit.plugin.objects.FakepitGameContentManager.mapProtectEvent
+import world.komq.server.fakepit.plugin.objects.FakepitGameContentManager.world
+import world.komq.server.fakepit.plugin.tasks.FakepitConfigReloadTask
 import java.io.File
 
 /***
@@ -24,10 +26,10 @@ import java.io.File
  * "Until I can get ahead of myself."
  */
 
-class FakePitPluginMain : JavaPlugin() {
+class FakepitPluginMain : JavaPlugin() {
 
     companion object {
-        lateinit var instance: FakePitPluginMain
+        lateinit var instance: FakepitPluginMain
             private set
     }
 
@@ -35,10 +37,11 @@ class FakePitPluginMain : JavaPlugin() {
 
     override fun onEnable() {
         instance = this
-        event = FakePitEvent()
+        event = FakepitEvent()
+        mapProtectEvent = FakepitMapProtectEvent()
 
         load(configFile)
-        server.scheduler.runTaskTimer(this, FakePitConfigReloadTask(), 0L, 20L)
+        server.scheduler.runTaskTimer(this, FakepitConfigReloadTask(), 0L, 20L)
         server.messenger.registerOutgoingPluginChannel(this, "BungeeCord")
         world.pvp = false
 

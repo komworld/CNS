@@ -4,7 +4,7 @@
  *  Licensed under the General Public License, Version 3.0. (https://opensource.org/licenses/gpl-3.0/)
  */
 
-package xyz.komq.server.fakepit.plugin.config
+package world.komq.server.fakepit.plugin.config
 
 import io.github.monun.tap.config.Config
 import io.github.monun.tap.config.ConfigSupport
@@ -17,12 +17,12 @@ import java.io.File
  * "Until I can get ahead of myself."
  */
 
-object FakePitConfig {
-    @Config
-    var allowAdminsToPlay = false
-
+object FakepitConfig {
     @Config
     var lobbyserver = "server"
+
+    @Config
+    var nonproduction = false
 
     fun load(configFile: File) {
         ConfigSupport.compute(this, configFile)

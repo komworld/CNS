@@ -4,9 +4,9 @@
  *  Licensed under the General Public License, Version 3.0. (https://opensource.org/licenses/gpl-3.0/)
  */
 
-package xyz.komq.server.fakepit.plugin.tasks
+package world.komq.server.fakepit.plugin.tasks
 
-import xyz.komq.server.fakepit.plugin.objects.FakePitGameContentManager.plugin
+import world.komq.server.fakepit.plugin.objects.FakepitGameContentManager.plugin
 import java.io.File
 
 /***
@@ -16,7 +16,7 @@ import java.io.File
  * "Until I can get ahead of myself."
  */
 
-class FakePitConfigReloadTask: Runnable {
+class FakepitConfigReloadTask: Runnable {
     private val configFile = File(plugin.dataFolder, "config.yml")
 
     private var configFileLastModified = configFile.lastModified()

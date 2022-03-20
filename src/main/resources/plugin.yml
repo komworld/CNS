@@ -3,5 +3,6 @@ main: $pluginMain
 api-version: "1.18"
 version: $version
 libraries:
-  - io.github.monun:kommand:$kommandVersion
-  - io.github.monun:tap:$tapVersion
+  - io.github.monun:kommand-core:$kommandVersion
+  - io.github.monun:tap-core:$tapVersion
+  - world.komq:parallel-universe-core:0.0.5
