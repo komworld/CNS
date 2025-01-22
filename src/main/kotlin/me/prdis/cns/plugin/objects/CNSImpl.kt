@@ -42,6 +42,7 @@ import me.prdis.cns.plugin.objects.CNSObject.mapNum
 import me.prdis.cns.plugin.objects.CNSObject.maxPlayers
 import me.prdis.cns.plugin.objects.CNSObject.minPlayers
 import me.prdis.cns.plugin.objects.CNSObject.nsOwner
+import me.prdis.cns.plugin.objects.CNSObject.playerInternalDeaths
 import me.prdis.cns.plugin.objects.CNSObject.plugin
 import me.prdis.cns.plugin.objects.CNSObject.pointsObjective
 import me.prdis.cns.plugin.objects.CNSObject.sc
@@ -105,6 +106,8 @@ object CNSImpl {
             }
         }
 
+        playerInternalDeaths.clear()
+        
         teamConfiguration()
 
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
@@ -142,6 +145,7 @@ object CNSImpl {
         }
         gamePlayers.clear()
         spectators.clear()
+        playerInternalDeaths.clear()
         sc.teams.forEach { it.unregister() }
 
         pointsObjective.unregister()

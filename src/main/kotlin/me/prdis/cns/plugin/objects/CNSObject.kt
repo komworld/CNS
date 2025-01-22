@@ -98,7 +98,7 @@ object CNSObject {
 
     var nsOwner: UUID? = null
 
-    private val playerInternalDeaths = HashMap<UUID, Boolean>()
+    val playerInternalDeaths = HashMap<UUID, Boolean>()
     var Player.internalDeath: Boolean
         get() = playerInternalDeaths[this.uniqueId] ?: false
         set(value) {
