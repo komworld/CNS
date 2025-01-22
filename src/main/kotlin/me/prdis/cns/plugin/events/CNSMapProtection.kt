@@ -24,7 +24,6 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockFadeEvent
-import org.bukkit.event.block.BlockPhysicsEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
@@ -38,11 +37,6 @@ object CNSMapProtection : Listener {
     @EventHandler
     fun BlockBreakEvent.onBlockBreak() {
         if (player.gameMode == GameMode.ADVENTURE) isCancelled = true
-    }
-
-    @EventHandler
-    fun BlockPhysicsEvent.onBlockPhysics() {
-        if (!Tag.DOORS.isTagged(block.type)) isCancelled = true
     }
 
     @EventHandler

@@ -107,7 +107,7 @@ object CNSImpl {
         }
 
         playerInternalDeaths.clear()
-        
+
         teamConfiguration()
 
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
@@ -142,7 +142,10 @@ object CNSImpl {
             it.gameMode = GameMode.ADVENTURE
             it.inventory.clear()
             it.isGlowing = false
+            it.health = 20.0
+            it.foodLevel = 20
         }
+
         gamePlayers.clear()
         spectators.clear()
         playerInternalDeaths.clear()
