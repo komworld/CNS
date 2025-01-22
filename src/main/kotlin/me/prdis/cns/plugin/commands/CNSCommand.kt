@@ -21,6 +21,7 @@ import me.prdis.cns.plugin.objects.CNSImpl.changeMap
 import me.prdis.cns.plugin.objects.CNSImpl.startGame
 import me.prdis.cns.plugin.objects.CNSImpl.stopGame
 import me.prdis.cns.plugin.objects.CNSObject.commandManager
+import me.prdis.cns.plugin.objects.CNSObject.isRunning
 import me.prdis.cns.plugin.objects.CNSObject.maxPlayers
 import me.prdis.cns.plugin.objects.CNSObject.minPlayers
 import me.prdis.cns.plugin.objects.CNSObject.plugin
@@ -57,13 +58,21 @@ object CNSCommand {
         })
 
         commandManager.command(cns.literal("start").handler { ctx ->
-            ctx.sender().source().sendMessage(text("게임을 시작합니다."))
-            startGame()
+            if (!isRunning) {
+                ctx.sender().source().sendMessage(text("게임을 시작합니다."))
+                startGame()
+            } else {
+                ctx.sender().source().sendMessage(text("게임이 이미 시작되었습니다.", NamedTextColor.RED))
+            }
         })
 
         commandManager.command(cns.literal("stop").handler { ctx ->
-            ctx.sender().source().sendMessage(text("게임을 종료합니다."))
-            stopGame()
+            if (isRunning) {
+                ctx.sender().source().sendMessage(text("게임을 종료합니다."))
+                stopGame()
+            } else {
+                ctx.sender().source().sendMessage(text("게임이 이미 종료된 상태입니다.", NamedTextColor.RED))
+            }
         })
 
         commandManager.command(
